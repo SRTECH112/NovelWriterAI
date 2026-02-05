@@ -129,6 +129,25 @@ export default function EditorPage() {
     );
   }
 
+  const sections = project.storyBible?.structured_sections ?? {
+    worldRules: [],
+    loreTimeline: [],
+    factions: [],
+    technologyMagicRules: [],
+    themesTone: [],
+    hardConstraints: [],
+    softGuidelines: [],
+  };
+
+  const safeSelectedChapter = selectedChapter
+    ? {
+        ...selectedChapter,
+        stateDelta:
+          selectedChapter.stateDelta ||
+          { characterStates: {}, worldChanges: [], plotProgression: [] },
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Bar */}
@@ -218,17 +237,17 @@ export default function EditorPage() {
 
         {/* CENTER PANEL - Chapter Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {selectedChapter ? (
+          {safeSelectedChapter ? (
             <>
               <div className="p-4 border-b bg-card flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">Chapter {selectedChapter.number}</h2>
-                  <p className="text-sm text-muted-foreground">{selectedChapter.summary}</p>
+                  <h2 className="text-xl font-semibold">Chapter {safeSelectedChapter.number}</h2>
+                  <p className="text-sm text-muted-foreground">{safeSelectedChapter.summary}</p>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => handleRegenerateChapter(selectedChapter)}
+                  onClick={() => handleRegenerateChapter(safeSelectedChapter)}
                   disabled={loading}
                 >
                   {loading ? (
@@ -240,26 +259,26 @@ export default function EditorPage() {
                 </Button>
               </div>
 
-              {selectedChapter.proseQuality && (
+              {safeSelectedChapter.proseQuality && (
                 <div className="px-4 pt-4">
                   <div className={`border rounded-lg p-3 ${
-                    selectedChapter.proseQuality.score >= 80 ? 'bg-green-50 border-green-200' :
-                    selectedChapter.proseQuality.score >= 60 ? 'bg-yellow-50 border-yellow-200' :
+                    safeSelectedChapter.proseQuality.score >= 80 ? 'bg-green-50 border-green-200' :
+                    safeSelectedChapter.proseQuality.score >= 60 ? 'bg-yellow-50 border-yellow-200' :
                     'bg-red-50 border-red-200'
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Prose Quality</span>
                       <Badge variant={
-                        selectedChapter.proseQuality.score >= 80 ? 'default' :
-                        selectedChapter.proseQuality.score >= 60 ? 'secondary' :
+                        safeSelectedChapter.proseQuality.score >= 80 ? 'default' :
+                        safeSelectedChapter.proseQuality.score >= 60 ? 'secondary' :
                         'destructive'
                       }>
-                        {selectedChapter.proseQuality.score}/100
+                        {safeSelectedChapter.proseQuality.score}/100
                       </Badge>
                     </div>
-                    {selectedChapter.proseQuality.issues.length > 0 && (
+                    {safeSelectedChapter.proseQuality.issues.length > 0 && (
                       <div className="mt-2 text-xs space-y-1">
-                        {selectedChapter.proseQuality.issues.map((issue, i) => (
+                        {safeSelectedChapter.proseQuality.issues.map((issue, i) => (
                           <div key={i} className="text-red-700">• {issue}</div>
                         ))}
                       </div>
@@ -270,7 +289,7 @@ export default function EditorPage() {
 
               <ScrollArea className="flex-1 p-6">
                 <div className="prose prose-sm max-w-none">
-                  {selectedChapter.content.split('\n\n').map((paragraph, i) => (
+                  {safeSelectedChapter.content.split('\n\n').map((paragraph, i) => (
                     <p key={i} className="mb-4 leading-relaxed">
                       {paragraph}
                     </p>
@@ -356,27 +375,27 @@ export default function EditorPage() {
                   </div>
                 </div>
 
-                {selectedChapter && (
+                {safeSelectedChapter && (
                   <>
                     <div className="border-t pt-4">
                       <h3 className="font-semibold text-sm mb-2">Chapter Info</h3>
                       <div className="space-y-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">Summary:</span>
-                          <p className="mt-1">{selectedChapter.summary}</p>
+                          <p className="mt-1">{safeSelectedChapter.summary}</p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Word Count:</span>
-                          <p className="mt-1">{selectedChapter.content.split(/\s+/).length} words</p>
+                          <p className="mt-1">{safeSelectedChapter.content.split(/\s+/).length} words</p>
                         </div>
                       </div>
                     </div>
 
-                    {Object.keys(selectedChapter.stateDelta.characterStates).length > 0 && (
+                    {Object.keys(safeSelectedChapter.stateDelta.characterStates).length > 0 && (
                       <div>
                         <h3 className="font-semibold text-sm mb-2">Character States</h3>
                         <div className="space-y-1 text-xs">
-                          {Object.entries(selectedChapter.stateDelta.characterStates).map(([char, state]) => (
+                          {Object.entries(safeSelectedChapter.stateDelta.characterStates).map(([char, state]) => (
                             <div key={char} className="bg-muted/50 rounded p-2">
                               <div className="font-medium">{char}</div>
                               <div className="text-muted-foreground">{state}</div>
