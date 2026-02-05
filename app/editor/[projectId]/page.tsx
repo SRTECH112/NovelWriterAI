@@ -344,7 +344,7 @@ export default function EditorPage() {
                     World Rules
                   </h3>
                   <ul className="space-y-1 text-xs">
-                    {project.storyBible.structured_sections.worldRules.map((rule, i) => (
+                    {sections.worldRules.map((rule, i) => (
                       <li key={i} className="pl-3 border-l-2 border-primary/30 py-1">
                         {rule}
                       </li>
@@ -355,7 +355,7 @@ export default function EditorPage() {
                 <div>
                   <h3 className="font-semibold text-sm mb-2">Hard Constraints</h3>
                   <ul className="space-y-1 text-xs">
-                    {project.storyBible.structured_sections.hardConstraints.map((constraint, i) => (
+                    {sections.hardConstraints.map((constraint, i) => (
                       <li key={i} className="pl-3 border-l-2 border-destructive/30 py-1">
                         {constraint}
                       </li>
@@ -366,7 +366,7 @@ export default function EditorPage() {
                 <div>
                   <h3 className="font-semibold text-sm mb-2">Factions</h3>
                   <div className="space-y-2">
-                    {project.storyBible.structured_sections.factions.map((faction, i) => (
+                    {sections.factions.map((faction, i) => (
                       <div key={i} className="bg-muted/50 rounded p-2 text-xs">
                         <div className="font-medium">{faction.name}</div>
                         <div className="text-muted-foreground mt-1">{faction.description}</div>
