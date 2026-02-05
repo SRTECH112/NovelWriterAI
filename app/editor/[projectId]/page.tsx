@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Plus, RefreshCw, Loader2, BookOpen, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, RefreshCw, Loader2, BookOpen, FileText, AlertTriangle, Edit, Lock } from 'lucide-react';
 import { ProjectStore } from '@/lib/project-store';
 import { ProjectWithDetails } from '@/lib/database-types';
 import { Chapter } from '@/lib/types';
@@ -166,6 +166,8 @@ export default function EditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')}>Dashboard</Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/new-book')}>Story Bible</Button>
             <Badge variant="outline">{project.status}</Badge>
             <Badge variant="outline">
               {project.chapters.length} / {project.outline?.chapters.length || 0} chapters
@@ -321,92 +323,111 @@ export default function EditorPage() {
         </div>
 
         {/* RIGHT PANEL - Story Bible & Info */}
-        <div className="w-80 border-l bg-card flex flex-col overflow-hidden">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-semibold">Story Bible</h2>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowBible(!showBible)}
-              >
-                {showBible ? 'Hide' : 'Show'}
+        <div className="w-96 border-l bg-card flex flex-col overflow-hidden">
+          <div className="p-4 border-b space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Canon Control</h2>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => router.push('/new-book')}>
+                  <Edit className="h-4 w-4 mr-1" /> Edit Story Bible
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => router.push('/new-book')}>
+                  <Edit className="h-4 w-4 mr-1" /> Edit Outline
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="default" size="sm" onClick={() => alert('Regenerate Story Bible from concept in New Book flow')}>
+                Regenerate Bible
+              </Button>
+              <Button variant="default" size="sm" onClick={() => alert('Regenerate Outline from locked Bible in New Book flow')}>
+                Regenerate Outline
+              </Button>
+              <Button variant={project.storyBible?.locked ? 'outline' : 'default'} size="sm" onClick={() => alert('Canon lock persists in local storage after approval')}>
+                <Lock className="h-4 w-4 mr-1" /> {project.storyBible?.locked ? 'Canon Locked' : 'Approve & Lock Canon'}
               </Button>
             </div>
           </div>
 
-          {showBible && project.storyBible && (
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    World Rules
-                  </h3>
-                  <ul className="space-y-1 text-xs">
-                    {sections.worldRules.map((rule, i) => (
-                      <li key={i} className="pl-3 border-l-2 border-primary/30 py-1">
-                        {rule}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Hard Constraints</h3>
-                  <ul className="space-y-1 text-xs">
-                    {sections.hardConstraints.map((constraint, i) => (
-                      <li key={i} className="pl-3 border-l-2 border-destructive/30 py-1">
-                        {constraint}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Factions</h3>
-                  <div className="space-y-2">
-                    {sections.factions.map((faction, i) => (
-                      <div key={i} className="bg-muted/50 rounded p-2 text-xs">
-                        <div className="font-medium">{faction.name}</div>
-                        <div className="text-muted-foreground mt-1">{faction.description}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {safeSelectedChapter && (
-                  <>
-                    <div className="border-t pt-4">
-                      <h3 className="font-semibold text-sm mb-2">Chapter Info</h3>
-                      <div className="space-y-2 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Summary:</span>
-                          <p className="mt-1">{safeSelectedChapter.summary}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Word Count:</span>
-                          <p className="mt-1">{safeSelectedChapter.content.split(/\s+/).length} words</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {Object.keys(safeSelectedChapter.stateDelta.characterStates).length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-sm mb-2">Character States</h3>
-                        <div className="space-y-1 text-xs">
-                          {Object.entries(safeSelectedChapter.stateDelta.characterStates).map(([char, state]) => (
-                            <div key={char} className="bg-muted/50 rounded p-2">
-                              <div className="font-medium">{char}</div>
-                              <div className="text-muted-foreground">{state}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+          {project.storyBible && (
+            <ScrollArea className="flex-1 p-4 space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Whitepaper (verbatim)</h3>
+                <div className="text-xs whitespace-pre-wrap bg-muted/50 p-3 rounded border">{project.storyBible.raw_whitepaper}</div>
               </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm flex items-center gap-2"><BookOpen className="h-4 w-4" /> World Rules</h3>
+                <ul className="space-y-1 text-xs">
+                  {sections.worldRules.map((rule, i) => (
+                    <li key={i} className="pl-3 border-l-2 border-primary/30 py-1">{rule}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Hard Constraints</h3>
+                <ul className="space-y-1 text-xs">
+                  {sections.hardConstraints.map((c, i) => (
+                    <li key={i} className="pl-3 border-l-2 border-destructive/30 py-1">{c}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Themes & Tone</h3>
+                <ul className="space-y-1 text-xs">
+                  {sections.themesTone.map((t, i) => (
+                    <li key={i} className="pl-3 border-l-2 border-primary/20 py-1">{t}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Factions</h3>
+                <div className="space-y-2">
+                  {sections.factions.map((f, i) => (
+                    <div key={i} className="bg-muted/50 rounded p-2 text-xs">
+                      <div className="font-medium">{f.name}</div>
+                      <div className="text-muted-foreground mt-1">{f.description}</div>
+                      <div className="text-muted-foreground text-[11px] mt-1">Goals: {f.goals}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Timeline</h3>
+                <div className="space-y-1 text-xs">
+                  {(sections.loreTimeline || []).map((e, i) => (
+                    <div key={i} className="pl-3 border-l-2 border-primary/30 py-1">
+                      <div className="font-medium">{e.period}</div>
+                      <div className="text-muted-foreground">{e.event}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {safeSelectedChapter && (
+                <div className="border-t pt-3 space-y-2">
+                  <h3 className="font-semibold text-sm">Chapter Info</h3>
+                  <div className="text-xs space-y-1">
+                    <div><span className="text-muted-foreground">Summary:</span> {safeSelectedChapter.summary}</div>
+                    <div><span className="text-muted-foreground">Word Count:</span> {safeSelectedChapter.content.split(/\s+/).length} words</div>
+                  </div>
+                  {Object.keys(safeSelectedChapter.stateDelta.characterStates).length > 0 && (
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-xs">Character States</h4>
+                      {Object.entries(safeSelectedChapter.stateDelta.characterStates).map(([char, state]) => (
+                        <div key={char} className="bg-muted/50 rounded p-2 text-xs">
+                          <div className="font-medium">{char}</div>
+                          <div className="text-muted-foreground">{state}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </ScrollArea>
           )}
         </div>

@@ -306,10 +306,8 @@ export default function NewBookPage() {
         {currentStep === 'whitepaper' && (
           <Card>
             <CardHeader>
-              <CardTitle>Story Concept</CardTitle>
-              <CardDescription>
-                Provide your story concept, world-building notes, or whitepaper. This will be used to generate your Story Bible.
-              </CardDescription>
+              <CardTitle>Story Concept / Whitepaper</CardTitle>
+              <CardDescription>Paste your full concept. This will be your canonical whitepaper.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -362,27 +360,58 @@ export default function NewBookPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
-                    <h3 className="font-semibold mb-2">World Rules</h3>
-                    <ul className="list-disc list-inside space-y-1 text-sm mb-4">
-                      {generatedBible.structured_sections.worldRules.map((rule, i) => (
-                        <li key={i}>{rule}</li>
-                      ))}
-                    </ul>
+                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto space-y-4 text-sm">
+                    <div>
+                      <h3 className="font-semibold mb-2">Whitepaper (verbatim)</h3>
+                      <div className="whitespace-pre-wrap bg-background border rounded p-3 text-xs">
+                        {generatedBible.raw_whitepaper}
+                      </div>
+                    </div>
 
-                    <h3 className="font-semibold mb-2">Hard Constraints</h3>
-                    <ul className="list-disc list-inside space-y-1 text-sm mb-4">
-                      {generatedBible.structured_sections.hardConstraints.map((constraint, i) => (
-                        <li key={i}>{constraint}</li>
-                      ))}
-                    </ul>
+                    <div>
+                      <h3 className="font-semibold mb-2">World Rules</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedBible.structured_sections.worldRules.map((rule, i) => (
+                          <li key={i}>{rule}</li>
+                        ))}
+                      </ul>
+                    </div>
 
-                    <h3 className="font-semibold mb-2">Themes & Tone</h3>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {generatedBible.structured_sections.themesTone.map((theme, i) => (
-                        <li key={i}>{theme}</li>
-                      ))}
-                    </ul>
+                    <div>
+                      <h3 className="font-semibold mb-2">Hard Constraints</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedBible.structured_sections.hardConstraints.map((constraint, i) => (
+                          <li key={i}>{constraint}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-2">Themes & Tone</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedBible.structured_sections.themesTone.map((theme, i) => (
+                          <li key={i}>{theme}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-2">Factions</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedBible.structured_sections.factions.map((faction, i) => (
+                          <li key={i}><span className="font-semibold">{faction.name}:</span> {faction.description} (Goals: {faction.goals})</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-2">Timeline</h3>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedBible.structured_sections.loreTimeline.map((event, i) => (
+                          <li key={i}><span className="font-semibold">{event.period}:</span> {event.event}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
 
                   <div className="flex justify-between pt-4">
@@ -426,15 +455,24 @@ export default function NewBookPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {generatedOutline.chapters.length} chapters • {generatedOutline.actStructure} structure
                     </p>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {generatedOutline.chapters.map((chapter) => (
-                        <div key={chapter.number} className="border-l-2 border-primary pl-3 py-1">
-                          <div className="font-medium text-sm">
-                            Chapter {chapter.number}: {chapter.title}
+                        <div key={chapter.number} className="border-l-2 border-primary pl-3 py-2 space-y-1">
+                          <div className="font-medium text-sm flex justify-between items-center">
+                            <span>Chapter {chapter.number}: {chapter.title}</span>
+                            <span className="text-[11px] text-muted-foreground">POV: {chapter.pov || 'N/A'}</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Act {chapter.act} • {chapter.summary}
-                          </div>
+                          <div className="text-xs text-muted-foreground">Act {chapter.act} • {chapter.summary}</div>
+                          {chapter.beats && (
+                            <ul className="list-disc list-inside text-xs space-y-1">
+                              {chapter.beats.map((beat, idx) => (
+                                <li key={idx}>{beat}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {chapter.canonCitations && chapter.canonCitations.length > 0 && (
+                            <div className="text-[11px] text-muted-foreground">Canon: {chapter.canonCitations.join('; ')}</div>
+                          )}
                         </div>
                       ))}
                     </div>

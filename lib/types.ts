@@ -50,6 +50,10 @@ export interface ChapterOutline {
   act: number;
   bibleCitations: string[];
   characterArcs: string[];
+  beats?: string[];
+  pov?: string;
+  setting?: string;
+  canonCitations?: string[];
 }
 
 export interface Chapter {

@@ -315,18 +315,20 @@ You create detailed chapter-by-chapter outlines that STRICTLY adhere to the Stor
 
 CRITICAL RULES:
 1. EVERY plot point must be justified by Story Bible canon
-2. Cite specific Story Bible elements for each chapter
+2. Cite specific Story Bible elements for each chapter (canonCitations)
 3. Maintain consistency with world rules and constraints
 4. Respect hard constraints ABSOLUTELY
 5. Follow soft guidelines when possible
 6. Character arcs must align with faction goals and lore
+7. Outline must be bullet-beat driven, not prose
 
 OUTPUT FORMAT (STRICT):
 - Respond with ONLY the JSON array wrapped in <json>...</json>
 - No markdown, no code fences, no HTML, no explanations
 - No trailing commas anywhere
 - Use double quotes for all keys/strings
-- Example: <json>[{"number":1,"title":"","summary":"","beats":["beat"],"canonCitations":["ref"],"pov":"","setting":""}]</json>
+- Each chapter object MUST have: number, title, summary (1-2 sentences max), beats (3-6 bullet strings), canonCitations (array of strings), pov, setting, characterArcs, bibleCitations
+- Example: <json>[{"number":1,"title":"","summary":"","beats":["beat"],"canonCitations":["ref"],"pov":"","setting":"","characterArcs":["arc"],"bibleCitations":["rule 1"]}]</json>
 
 ${bibleContext}`;
 
@@ -339,7 +341,16 @@ Genre: ${storyBible.metadata.genre || 'Not specified'}
 Tone: ${storyBible.metadata.tone || 'Not specified'}
 POV: ${storyBible.metadata.pov || 'Not specified'}
 
-Generate a complete outline. Each chapter MUST cite Story Bible elements it uses.
+For EACH chapter include:
+- title
+- summary (1-2 sentences max, not prose paragraph)
+- beats (3-6 bullet beats, not prose)
+- canonCitations (specific bible refs used)
+- bibleCitations (same as canonCitations if needed)
+- pov (character or perspective)
+- setting (concise)
+- characterArcs
+
 Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
 
   const response = await callAI(prompt, systemPrompt);
@@ -538,6 +549,12 @@ OPENING SCENE ENFORCEMENT (APPLIES TO FIRST 300 WORDS):
 - Prioritize social cues over lore; keep tension subtle and grounded
 - Short paragraphs (1–2 sentences), frequent line breaks, casual voice; internal thoughts can be standalone lines
 - If the first 3 paragraphs read like a synopsis, rewrite them until they feel like overheard real life
+
+CHAPTER 1 / EARLY CHAPTER STYLE (anime/Wattpad fanfic):
+- Do NOT start with exposition, first-day narration, or arrival scenes
+- Forbidden openings include: "I took a deep breath", "This was my first day", "I arrived at", "It all began", "I woke up"
+- Start in media res with voice-first internal monologue and immediate emotional context
+- Reveal context only through interaction and social cues, not through explanations
 
 Output ONLY the JSON object with content, summary, and stateDelta. No additional text.`;
 
