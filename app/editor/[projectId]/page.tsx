@@ -408,6 +408,33 @@ export default function EditorPage() {
                 </div>
               </div>
 
+              {project.outline && (
+                <div className="space-y-2 border-t pt-3">
+                  <h3 className="font-semibold text-sm">Outline (beats view)</h3>
+                  <div className="space-y-2 text-xs max-h-64 overflow-y-auto pr-2">
+                    {project.outline.chapters.map((ch) => (
+                      <div key={ch.number} className="border-l-2 border-primary/40 pl-3 py-1 space-y-1">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>Ch {ch.number}: {ch.title}</span>
+                          <span>POV: {ch.pov || 'N/A'}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">Act {ch.act} • {ch.summary}</div>
+                        {ch.beats && (
+                          <ul className="list-disc list-inside space-y-1">
+                            {ch.beats.map((b, idx) => (
+                              <li key={idx}>{b}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {ch.canonCitations && ch.canonCitations.length > 0 && (
+                          <div className="text-[11px] text-muted-foreground">Canon: {ch.canonCitations.join('; ')}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {safeSelectedChapter && (
                 <div className="border-t pt-3 space-y-2">
                   <h3 className="font-semibold text-sm">Chapter Info</h3>
