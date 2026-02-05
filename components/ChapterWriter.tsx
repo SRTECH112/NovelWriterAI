@@ -19,6 +19,12 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
   const [error, setError] = useState('');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
 
+  const safeStateDelta = selectedChapter?.stateDelta || {
+    characterStates: {},
+    worldChanges: [],
+    plotProgression: [],
+  };
+
   const nextChapterNumber = chapters.length > 0 ? Math.max(...chapters.map(c => c.number)) + 1 : 1;
   const canGenerateNext = nextChapterNumber <= outline.chapters.length;
 
@@ -251,7 +257,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
               <div>
                 <h3 className="font-semibold mb-2 text-sm">Character States</h3>
                 <div className="space-y-1 text-sm">
-                  {Object.entries(selectedChapter.stateDelta.characterStates).map(([char, state]) => (
+                  {Object.entries(safeStateDelta.characterStates).map(([char, state]) => (
                     <div key={char} className="bg-muted/50 p-2 rounded">
                       <span className="font-medium">{char}:</span> {state}
                     </div>
@@ -261,7 +267,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
               <div>
                 <h3 className="font-semibold mb-2 text-sm">World Changes</h3>
                 <ul className="space-y-1 text-sm">
-                  {selectedChapter.stateDelta.worldChanges.map((change, i) => (
+                  {safeStateDelta.worldChanges.map((change, i) => (
                     <li key={i} className="bg-muted/50 p-2 rounded">
                       • {change}
                     </li>
