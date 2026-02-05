@@ -415,6 +415,16 @@ export async function generateChapter(
     throw new Error(`Chapter ${chapterNumber} not found in outline`);
   }
 
+  const sections = storyBible?.structured_sections ?? {
+    worldRules: [],
+    loreTimeline: [],
+    factions: [],
+    technologyMagicRules: [],
+    themesTone: [],
+    hardConstraints: [],
+    softGuidelines: [],
+  };
+
   const proseQualityPrompt = getProseQualityPrompt();
 
   const systemPrompt = `You are a Novel Chapter Writer with ABSOLUTE adherence to canon AND prose quality standards.
@@ -447,37 +457,42 @@ IMPORTANT JSON RULES:
 - Ensure valid JSON syntax`;
 
   const bibleContext = `
-═══════════════════════════════════════════════════════════
+═════════════════════════════════════════════════════════════
 STORY BIBLE - CANONICAL SOURCE OF TRUTH (IMMUTABLE)
-═══════════════════════════════════════════════════════════
+═════════════════════════════════════════════════════════════
 
 WORLD RULES (MUST OBEY):
-${storyBible.structured_sections.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+${sections.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
 LORE TIMELINE:
-${storyBible.structured_sections.loreTimeline.map(e => `- ${e.period}: ${e.event}`).join('\n')}
+${sections.loreTimeline.map(e => `- ${e.period}: ${e.event}`).join('\n')}
 
 FACTIONS:
-${storyBible.structured_sections.factions.map(f => `- ${f.name}: ${f.description}\n  Goals: ${f.goals}`).join('\n')}
+${sections.factions.map(f => `- ${f.name}: ${f.description}\n  Goals: ${f.goals}`).join('\n')}
 
 TECHNOLOGY/MAGIC RULES (MUST OBEY):
-${storyBible.structured_sections.technologyMagicRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+${sections.technologyMagicRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
 THEMES & TONE:
-${storyBible.structured_sections.themesTone.join(', ')}
+${sections.themesTone.join(', ')}
 
 ⚠️ HARD CONSTRAINTS (ABSOLUTE - CANNOT VIOLATE):
-${storyBible.structured_sections.hardConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+${sections.hardConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
 SOFT GUIDELINES (FOLLOW WHEN POSSIBLE):
-${storyBible.structured_sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
+${sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
 
-═══════════════════════════════════════════════════════════
+═════════════════════════════════════════════════════════════
 `;
 
-  const narrativeMemory = previousChapters.length > 0 ? `
+  const safePrev = previousChapters.map((ch) => ({
+    ...ch,
+    stateDelta: ch.stateDelta || { characterStates: {}, worldChanges: [], plotProgression: [] },
+  }));
+
+  const narrativeMemory = safePrev.length > 0 ? `
 NARRATIVE MEMORY (PREVIOUS CHAPTERS):
-${previousChapters.map(ch => `
+${safePrev.map(ch => `
 Chapter ${ch.number}: ${ch.summary}
 Character States: ${JSON.stringify(ch.stateDelta.characterStates)}
 World Changes: ${ch.stateDelta.worldChanges.join('; ')}
@@ -493,8 +508,8 @@ ${narrativeMemory}
 CHAPTER OUTLINE:
 Act: ${chapterOutline.act}
 Summary: ${chapterOutline.summary}
-Bible Citations: ${chapterOutline.bibleCitations.join(', ')}
-Character Arcs: ${chapterOutline.characterArcs.join(', ')}
+Bible Citations: ${(chapterOutline.bibleCitations || []).join(', ')}
+Character Arcs: ${(chapterOutline.characterArcs || []).join(', ')}
 
 REQUIREMENTS:
 - Length: 2000-4000 words
