@@ -64,7 +64,7 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     ];
 
     let lastError: any = null;
-    const maxTokens = 1500; // keep cost low and avoid long responses
+    const maxTokens = 3000; // allow fuller outputs while staying under limits
     for (const model of anthroModels) {
       try {
         const message = await anthropicClient.messages.create({
@@ -386,6 +386,19 @@ Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
     console.error('Outline JSON parse error:', err.message);
     console.error('Attempted outline JSON (trunc):', jsonMatch[0].substring(0, 800));
     console.error('Raw cleaned response (trunc):', cleanedResponse.substring(0, 800));
+    // Attempt a repair by truncating to the last complete object and closing the array
+    try {
+      const data = jsonMatch[0];
+      const lastBrace = data.lastIndexOf('}');
+      if (lastBrace > 0) {
+        const repaired = data.slice(0, lastBrace + 1) + ']';
+        const parsed = JSON.parse(repaired) as Outline['chapters'];
+        console.error('Outline JSON repaired by truncation.');
+        return parsed;
+      }
+    } catch (repairErr: any) {
+      console.error('Outline JSON repair failed:', repairErr.message);
+    }
     // Fallback to minimal outline to avoid blocking user and additional AI spend
     return fallbackOutline();
   }
