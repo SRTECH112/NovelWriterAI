@@ -437,6 +437,17 @@ CRITICAL RULES - CANON ENFORCEMENT:
 5. Maintain consistency with all previous chapters
 6. Follow the outline precisely
 
+OPENING SCENE MANDATE (anime fanfic / Wattpad romance style):
+- The story starts inside an ordinary moment already in progress
+- No introductions, no world/setting exposition, no meta framing
+- POV is strictly what the protagonist notices right now; do not explain what feels normal to them
+- Social cues (glances, whispers, tone, distance) outweigh lore
+- Scene is small, mundane, emotionally grounded; tension is subtle (discomfort, awareness, boredom, pressure)
+- Short paragraphs (1–2 sentences) with frequent line breaks; internal thoughts may stand alone; voice is casual
+- Absolutely forbidden: explaining the setting/institution, summarizing routines, referencing canon/rules/background, declaring significance/foreshadowing
+- If the first 3 paragraphs read like a synopsis, regenerate the opening scene until it feels like a casual lived moment
+
+PROSE QUALITY STANDARDS:
 ${proseQualityPrompt}
 
 OUTPUT FORMAT (JSON):
@@ -519,6 +530,14 @@ REQUIREMENTS:
 - MUST maintain consistency with previous chapters
 - MUST follow the outline
 - MUST meet all prose quality standards (scene-based, proper rhythm, no canon leakage)
+
+OPENING SCENE ENFORCEMENT (APPLIES TO FIRST 300 WORDS):
+- Begin inside an ordinary moment already happening; no exposition
+- No worldbuilding, no rules/canon exposition, no meta framing
+- POV limited to protagonist’s immediate awareness; do not explain familiar things
+- Prioritize social cues over lore; keep tension subtle and grounded
+- Short paragraphs (1–2 sentences), frequent line breaks, casual voice; internal thoughts can be standalone lines
+- If the first 3 paragraphs read like a synopsis, rewrite them until they feel like overheard real life
 
 Output ONLY the JSON object with content, summary, and stateDelta. No additional text.`;
 
