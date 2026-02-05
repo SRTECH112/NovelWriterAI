@@ -1,0 +1,397 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeft, Plus, RefreshCw, Loader2, BookOpen, FileText, AlertTriangle } from 'lucide-react';
+import { ProjectStore } from '@/lib/project-store';
+import { ProjectWithDetails } from '@/lib/database-types';
+import { Chapter } from '@/lib/types';
+
+export default function EditorPage() {
+  const router = useRouter();
+  const params = useParams();
+  const projectId = params.projectId as string;
+
+  const [project, setProject] = useState<ProjectWithDetails | null>(null);
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showBible, setShowBible] = useState(true);
+
+  useEffect(() => {
+    loadProject();
+  }, [projectId]);
+
+  const loadProject = () => {
+    const proj = ProjectStore.getProject(projectId);
+    if (!proj) {
+      router.push('/dashboard');
+      return;
+    }
+    setProject(proj);
+    if (proj.chapters.length > 0) {
+      setSelectedChapter(proj.chapters[proj.chapters.length - 1]);
+    }
+  };
+
+  const handleGenerateChapter = async (chapterNumber: number) => {
+    if (!project?.storyBible || !project?.outline) {
+      setError('Story Bible and Outline must be set before generating chapters');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/generate-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyBible: project.storyBible,
+          outline: project.outline,
+          chapterNumber,
+          previousChapters: project.chapters,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate chapter');
+      }
+
+      const result = await response.json();
+      ProjectStore.saveChapter(projectId, result.chapter);
+      loadProject();
+      setSelectedChapter(result.chapter);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerateChapter = async (chapter: Chapter) => {
+    if (!project?.storyBible || !project?.outline) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const previousChaps = project.chapters.filter(c => c.number < chapter.number);
+      const response = await fetch('/api/generate-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyBible: project.storyBible,
+          outline: project.outline,
+          chapterNumber: chapter.number,
+          previousChapters: previousChaps,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to regenerate chapter');
+      }
+
+      const result = await response.json();
+      ProjectStore.saveChapter(projectId, result.chapter);
+      loadProject();
+      setSelectedChapter(result.chapter);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getNextChapterNumber = () => {
+    if (!project?.chapters.length) return 1;
+    return Math.max(...project.chapters.map(c => c.number)) + 1;
+  };
+
+  const canGenerateNext = () => {
+    if (!project?.outline) return false;
+    const nextNum = getNextChapterNumber();
+    return nextNum <= project.outline.chapters.length;
+  };
+
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top Bar */}
+      <div className="border-b bg-card">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Menu
+            </Button>
+            <div className="border-l pl-4">
+              <h1 className="font-semibold">{project.title}</h1>
+              <p className="text-xs text-muted-foreground">
+                {selectedChapter ? `Chapter ${selectedChapter.number}` : 'No chapter selected'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{project.status}</Badge>
+            <Badge variant="outline">
+              {project.chapters.length} / {project.outline?.chapters.length || 0} chapters
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="container mx-auto px-4 pt-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <p>{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3-Panel Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT PANEL - Chapter List */}
+        <div className="w-64 border-r bg-card flex flex-col">
+          <div className="p-4 border-b">
+            <h2 className="font-semibold mb-2">Chapters</h2>
+            <Button 
+              className="w-full" 
+              size="sm"
+              onClick={() => handleGenerateChapter(getNextChapterNumber())}
+              disabled={loading || !canGenerateNext()}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Generate Next
+            </Button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {project.outline?.chapters.map((outlineChapter) => {
+                const generatedChapter = project.chapters.find(c => c.number === outlineChapter.number);
+                const isSelected = selectedChapter?.number === outlineChapter.number;
+
+                return (
+                  <div
+                    key={outlineChapter.number}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                    }`}
+                    onClick={() => generatedChapter && setSelectedChapter(generatedChapter)}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">Ch. {outlineChapter.number}</span>
+                      {generatedChapter && (
+                        <Badge variant={isSelected ? 'secondary' : 'default'} className="text-xs">
+                          Written
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs opacity-90 line-clamp-2">{outlineChapter.title}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* CENTER PANEL - Chapter Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedChapter ? (
+            <>
+              <div className="p-4 border-b bg-card flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">Chapter {selectedChapter.number}</h2>
+                  <p className="text-sm text-muted-foreground">{selectedChapter.summary}</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleRegenerateChapter(selectedChapter)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Regenerate
+                </Button>
+              </div>
+
+              {selectedChapter.proseQuality && (
+                <div className="px-4 pt-4">
+                  <div className={`border rounded-lg p-3 ${
+                    selectedChapter.proseQuality.score >= 80 ? 'bg-green-50 border-green-200' :
+                    selectedChapter.proseQuality.score >= 60 ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Prose Quality</span>
+                      <Badge variant={
+                        selectedChapter.proseQuality.score >= 80 ? 'default' :
+                        selectedChapter.proseQuality.score >= 60 ? 'secondary' :
+                        'destructive'
+                      }>
+                        {selectedChapter.proseQuality.score}/100
+                      </Badge>
+                    </div>
+                    {selectedChapter.proseQuality.issues.length > 0 && (
+                      <div className="mt-2 text-xs space-y-1">
+                        {selectedChapter.proseQuality.issues.map((issue, i) => (
+                          <div key={i} className="text-red-700">• {issue}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <ScrollArea className="flex-1 p-6">
+                <div className="prose prose-sm max-w-none">
+                  {selectedChapter.content.split('\n\n').map((paragraph, i) => (
+                    <p key={i} className="mb-4 leading-relaxed">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No Chapter Selected</h3>
+                <p className="text-muted-foreground mb-4">
+                  Select a chapter from the left panel or generate a new one
+                </p>
+                {canGenerateNext() && (
+                  <Button onClick={() => handleGenerateChapter(getNextChapterNumber())} disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Generate Chapter 1
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT PANEL - Story Bible & Info */}
+        <div className="w-80 border-l bg-card flex flex-col overflow-hidden">
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold">Story Bible</h2>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowBible(!showBible)}
+              >
+                {showBible ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+          </div>
+
+          {showBible && project.storyBible && (
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    World Rules
+                  </h3>
+                  <ul className="space-y-1 text-xs">
+                    {project.storyBible.structured_sections.worldRules.map((rule, i) => (
+                      <li key={i} className="pl-3 border-l-2 border-primary/30 py-1">
+                        {rule}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Hard Constraints</h3>
+                  <ul className="space-y-1 text-xs">
+                    {project.storyBible.structured_sections.hardConstraints.map((constraint, i) => (
+                      <li key={i} className="pl-3 border-l-2 border-destructive/30 py-1">
+                        {constraint}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Factions</h3>
+                  <div className="space-y-2">
+                    {project.storyBible.structured_sections.factions.map((faction, i) => (
+                      <div key={i} className="bg-muted/50 rounded p-2 text-xs">
+                        <div className="font-medium">{faction.name}</div>
+                        <div className="text-muted-foreground mt-1">{faction.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedChapter && (
+                  <>
+                    <div className="border-t pt-4">
+                      <h3 className="font-semibold text-sm mb-2">Chapter Info</h3>
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Summary:</span>
+                          <p className="mt-1">{selectedChapter.summary}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Word Count:</span>
+                          <p className="mt-1">{selectedChapter.content.split(/\s+/).length} words</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {Object.keys(selectedChapter.stateDelta.characterStates).length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-sm mb-2">Character States</h3>
+                        <div className="space-y-1 text-xs">
+                          {Object.entries(selectedChapter.stateDelta.characterStates).map(([char, state]) => (
+                            <div key={char} className="bg-muted/50 rounded p-2">
+                              <div className="font-medium">{char}</div>
+                              <div className="text-muted-foreground">{state}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

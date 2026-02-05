@@ -1,0 +1,662 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
+import { HfInference } from '@huggingface/inference';
+import { StoryBible, Outline, Chapter, CanonEnforcementResult } from './types';
+import { validateChapterProse, getProseQualityPrompt, ProseValidationResult } from './prose-validator';
+
+const AI_PROVIDER = process.env.AI_PROVIDER || 'HUGGINGFACE';
+
+let geminiClient: GoogleGenerativeAI | null = null;
+let openaiClient: OpenAI | null = null;
+let anthropicClient: Anthropic | null = null;
+let groqClient: Groq | null = null;
+let hfClient: HfInference | null = null;
+
+if (AI_PROVIDER === 'GEMINI' && process.env.GEMINI_API_KEY) {
+  geminiClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+} else if (AI_PROVIDER === 'OPENAI' && process.env.OPENAI_API_KEY) {
+  openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+} else if (AI_PROVIDER === 'ANTHROPIC' && process.env.ANTHROPIC_API_KEY) {
+  anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+} else if (AI_PROVIDER === 'GROQ' && process.env.GROQ_API_KEY) {
+  groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+} else if (AI_PROVIDER === 'HUGGINGFACE' && process.env.HUGGINGFACE_API_KEY) {
+  hfClient = new HfInference(process.env.HUGGINGFACE_API_KEY);
+}
+
+async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
+  if (AI_PROVIDER === 'GEMINI' && geminiClient) {
+    try {
+      const model = geminiClient.getGenerativeModel({ 
+        model: 'gemini-pro',
+      });
+      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error: any) {
+      console.error('Gemini API Error:', error.message);
+      throw new Error(
+        'Gemini API Error: Your API key may not have access to Gemini models. ' +
+        'Please visit https://aistudio.google.com/app/apikey to create a new API key, ' +
+        'or switch to ANTHROPIC by setting AI_PROVIDER=ANTHROPIC in .env.local'
+      );
+    }
+  } else if (AI_PROVIDER === 'OPENAI' && openaiClient) {
+    const messages: any[] = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+    
+    const completion = await openaiClient.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages,
+      temperature: 0.7,
+    });
+    return completion.choices[0]?.message?.content || '';
+  } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
+    // Use the most widely available model to avoid not_found errors
+    const anthroModels = [
+      'claude-3-haiku-20240307',
+    ];
+
+    let lastError: any = null;
+    const maxTokens = 1500; // keep cost low and avoid long responses
+    for (const model of anthroModels) {
+      try {
+        const message = await anthropicClient.messages.create({
+          model,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+      system: (systemPrompt || 'You are a helpful AI assistant.') + '\n\nCRITICAL: Respond with ONLY JSON wrapped in <json>...</json>. No markdown, no code fences, no HTML, no explanations.',
+      messages: [
+        {
+          role: 'user',
+          content: prompt + '\n\nOUTPUT FORMAT: Return ONLY the JSON object wrapped exactly like <json>{...}</json>. No markdown, no code blocks, no explanations, no HTML.',
+        },
+      ],
+    });
+    
+    const content = message.content[0];
+    if (content.type === 'text') {
+      // Clean up any potential markdown or HTML wrapping
+      let text = content.text.trim();
+      
+      // If wrapped in <json> tags, extract content
+      const tagMatch = text.match(/<json>[\s\S]*?<\/json>/i);
+      if (tagMatch) {
+        text = tagMatch[0].replace(/<\/?json>/gi, '').trim();
+      }
+
+      // Remove markdown code blocks if present
+      if (text.startsWith('```')) {
+        text = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '');
+      }
+      
+      // Remove HTML if present
+      text = text.replace(/<!DOCTYPE[^>]*>/gi, '').replace(/<\/?html[^>]*>/gi, '').trim();
+      
+      return text;
+    }
+        throw new Error('Unexpected response format from Claude');
+      } catch (err: any) {
+        lastError = err;
+        // If Anthropic returns model not found, try next model
+        if (err?.message?.includes('not_found') || err?.message?.includes('not found')) {
+          continue;
+        }
+        // If API error, rethrow
+        throw err;
+      }
+    }
+    throw new Error(`All Claude models failed. Last error: ${lastError?.message || lastError}`);
+  } else if (AI_PROVIDER === 'GROQ' && groqClient) {
+    const messages: any[] = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+    
+    const completion = await groqClient.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      temperature: 0.7,
+      max_tokens: 8192,
+    });
+    return completion.choices[0]?.message?.content || '';
+  } else if (AI_PROVIDER === 'HUGGINGFACE' && hfClient) {
+    // Note: Hugging Face free tier has limitations
+    // For best results, use GROQ provider instead
+    const fullPrompt = systemPrompt 
+      ? `${systemPrompt}\n\n${prompt}`
+      : prompt;
+    
+    try {
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inputs: fullPrompt,
+            parameters: {
+              max_new_tokens: 4096,
+              temperature: 0.7,
+              return_full_text: false,
+            },
+          }),
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Hugging Face API error: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data[0]?.generated_text || '';
+    } catch (error: any) {
+      console.error('Hugging Face error:', error.message);
+      throw new Error(`Hugging Face API error: ${error.message}. Recommendation: Switch to GROQ provider in .env.local for better reliability.`);
+    }
+  }
+  
+  throw new Error(
+    `No AI provider configured. Current provider: ${AI_PROVIDER}. Please check your .env.local file and ensure the API key for ${AI_PROVIDER} is set correctly.`
+  );
+}
+
+export async function generateStoryBible(
+  whitepaper: string,
+  metadata: StoryBible['metadata']
+): Promise<StoryBible['structured_sections']> {
+  const fallbackBible = (): StoryBible['structured_sections'] => ({
+    worldRules: [],
+    loreTimeline: [],
+    factions: [],
+    technologyMagicRules: [],
+    themesTone: [],
+    hardConstraints: [],
+    softGuidelines: [],
+  });
+  const systemPrompt = `You are a Story Bible Generator for long-form novel writing.
+Your job is to extract and structure canonical information from a whitepaper/lore document.
+
+CRITICAL RULES:
+1. Extract ONLY information present in the whitepaper
+2. Do NOT invent or add new information
+3. Be precise and specific
+4. Hard Constraints are ABSOLUTE rules that cannot be violated
+5. Soft Guidelines are stylistic preferences
+
+OUTPUT FORMAT (STRICT):
+- Respond with ONLY the JSON object wrapped in <json>...</json>
+- No markdown, no code fences, no HTML, no explanations
+- No trailing commas anywhere
+- Use double quotes for all keys and strings
+- Example: <json>{"worldRules":["rule1"],"loreTimeline":[{"period":"Era","event":"..."}],"factions":[{"name":"","description":"","goals":""}],"technologyMagicRules":["rule"],"themesTone":["theme"],"hardConstraints":["rule"],"softGuidelines":["pref"]}</json>
+`;
+
+  const metadataStr = Object.entries(metadata)
+    .filter(([_, v]) => v)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n');
+
+  const prompt = `Generate a comprehensive Story Bible from this whitepaper.
+
+METADATA:
+${metadataStr}
+
+WHITEPAPER:
+${whitepaper}
+
+Extract and structure all canonical information. Output ONLY the JSON object, no additional text.`;
+
+  const response = await callAI(prompt, systemPrompt);
+  
+  // Clean up response - remove markdown code blocks, HTML, smart quotes, and trailing commas
+  let cleanedResponse = response
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
+    .replace(/<!DOCTYPE[^>]*>/gi, '')
+    .replace(/<html[^>]*>/gi, '')
+    .replace(/<\/html>/gi, '')
+    // normalize smart quotes to standard quotes
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .trim();
+
+  // Extract <json>...</json> if present
+  const tagMatch = cleanedResponse.match(/<json>[\s\S]*?<\/json>/i);
+  if (tagMatch) {
+    cleanedResponse = tagMatch[0].replace(/<\/?json>/gi, '').trim();
+  }
+
+  // Remove trailing commas (iterate)
+  let prev = '';
+  while (prev !== cleanedResponse) {
+    prev = cleanedResponse;
+    cleanedResponse = cleanedResponse.replace(/,(\s*[}\]])/g, '$1');
+  }
+
+  // Strip any leading text before the first '{'
+  const firstBrace = cleanedResponse.indexOf('{');
+  if (firstBrace > 0) {
+    cleanedResponse = cleanedResponse.slice(firstBrace);
+  }
+  
+  // Extract JSON object
+  const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('Failed to extract JSON from response:', response.substring(0, 800));
+    throw new Error('Failed to parse Story Bible JSON from AI response. The AI returned invalid format.');
+  }
+  
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError: any) {
+    console.error('JSON parse error:', parseError.message);
+    console.error('Attempted to parse (truncated):', jsonMatch[0].substring(0, 800));
+    console.error('Raw cleaned response (truncated):', cleanedResponse.substring(0, 800));
+    // Fallback to minimal structured bible to avoid blocking the user or extra AI retries
+    return fallbackBible();
+  }
+}
+
+export async function generateOutline(
+  storyBible: StoryBible,
+  actStructure: 'three-act' | 'five-act',
+  targetChapters: number = 40
+): Promise<Outline['chapters']> {
+  const fallbackOutline = (): Outline['chapters'] => {
+    const chapters: Outline['chapters'] = [];
+    for (let i = 1; i <= targetChapters; i++) {
+      chapters.push({
+        number: i,
+        title: `Chapter ${i}`,
+        summary: 'Placeholder summary (outline parsing failed)',
+        beats: ['Setup', 'Development', 'Climax'],
+        canonCitations: [],
+        pov: storyBible.metadata.pov || 'Unknown',
+        setting: storyBible.metadata.genre || 'Unknown',
+      } as any);
+    }
+    return chapters;
+  };
+  const bibleContext = `STORY BIBLE (CANONICAL - MUST NOT VIOLATE)
+WORLD RULES:
+${storyBible.structured_sections.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+LORE TIMELINE:
+${storyBible.structured_sections.loreTimeline.map(e => `- ${e.period}: ${e.event}`).join('\n')}
+
+FACTIONS:
+${storyBible.structured_sections.factions.map(f => `- ${f.name}: ${f.description} (Goals: ${f.goals})`).join('\n')}
+
+TECHNOLOGY/MAGIC RULES:
+${storyBible.structured_sections.technologyMagicRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+THEMES & TONE:
+${storyBible.structured_sections.themesTone.join(', ')}
+
+HARD CONSTRAINTS (ABSOLUTE):
+${storyBible.structured_sections.hardConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+SOFT GUIDELINES:
+${storyBible.structured_sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}`;
+
+  const systemPrompt = `You are a Novel Outline Generator.
+You create detailed chapter-by-chapter outlines that STRICTLY adhere to the Story Bible.
+
+CRITICAL RULES:
+1. EVERY plot point must be justified by Story Bible canon
+2. Cite specific Story Bible elements for each chapter
+3. Maintain consistency with world rules and constraints
+4. Respect hard constraints ABSOLUTELY
+5. Follow soft guidelines when possible
+6. Character arcs must align with faction goals and lore
+
+OUTPUT FORMAT (STRICT):
+- Respond with ONLY the JSON array wrapped in <json>...</json>
+- No markdown, no code fences, no HTML, no explanations
+- No trailing commas anywhere
+- Use double quotes for all keys/strings
+- Example: <json>[{"number":1,"title":"","summary":"","beats":["beat"],"canonCitations":["ref"],"pov":"","setting":""}]</json>
+
+${bibleContext}`;
+
+  const prompt = `Create a ${actStructure} outline with ${targetChapters} chapters.
+
+${bibleContext}
+
+METADATA:
+Genre: ${storyBible.metadata.genre || 'Not specified'}
+Tone: ${storyBible.metadata.tone || 'Not specified'}
+POV: ${storyBible.metadata.pov || 'Not specified'}
+
+Generate a complete outline. Each chapter MUST cite Story Bible elements it uses.
+Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
+
+  const response = await callAI(prompt, systemPrompt);
+  
+  // Clean and extract JSON
+  let cleanedResponse = response
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
+    .replace(/<!DOCTYPE[^>]*>/gi, '')
+    .replace(/<html[^>]*>/gi, '')
+    .replace(/<\/html>/gi, '')
+    // normalize smart quotes
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .trim();
+
+  // Extract <json>...</json> if present
+  const tagMatch = cleanedResponse.match(/<json>[\s\S]*?<\/json>/i);
+  if (tagMatch) {
+    cleanedResponse = tagMatch[0].replace(/<\/?json>/gi, '').trim();
+  }
+
+  // Remove trailing commas (iterate to clean nested cases)
+  let prev = '';
+  while (prev !== cleanedResponse) {
+    prev = cleanedResponse;
+    cleanedResponse = cleanedResponse.replace(/,(\s*[\]\}])/g, '$1');
+  }
+
+  // Strip leading text before first '['
+  const firstBracket = cleanedResponse.indexOf('[');
+  if (firstBracket > 0) {
+    cleanedResponse = cleanedResponse.slice(firstBracket);
+  }
+
+  const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    console.error('Failed to extract outline JSON. Cleaned (trunc):', cleanedResponse.substring(0, 800));
+    throw new Error('Failed to parse Outline JSON from AI response');
+  }
+  try {
+    return JSON.parse(jsonMatch[0]) as Outline['chapters'];
+  } catch (err: any) {
+    console.error('Outline JSON parse error:', err.message);
+    console.error('Attempted outline JSON (trunc):', jsonMatch[0].substring(0, 800));
+    console.error('Raw cleaned response (trunc):', cleanedResponse.substring(0, 800));
+    // Fallback to minimal outline to avoid blocking user and additional AI spend
+    return fallbackOutline();
+  }
+}
+
+export async function generateChapter(
+  storyBible: StoryBible,
+  outline: Outline,
+  chapterNumber: number,
+  previousChapters: Chapter[]
+): Promise<{ content: string; summary: string; stateDelta: Chapter['stateDelta']; proseValidation: ProseValidationResult }> {
+  const chapterOutline = outline.chapters.find(c => c.number === chapterNumber);
+  if (!chapterOutline) {
+    throw new Error(`Chapter ${chapterNumber} not found in outline`);
+  }
+
+  const proseQualityPrompt = getProseQualityPrompt();
+
+  const systemPrompt = `You are a Novel Chapter Writer with ABSOLUTE adherence to canon AND prose quality standards.
+
+CRITICAL RULES - CANON ENFORCEMENT:
+1. Story Bible is IMMUTABLE CANON - you CANNOT violate it
+2. If creativity conflicts with canon, CANON WINS
+3. Every event must be consistent with world rules
+4. Hard Constraints are ABSOLUTE - violation is forbidden
+5. Maintain consistency with all previous chapters
+6. Follow the outline precisely
+
+${proseQualityPrompt}
+
+OUTPUT FORMAT (JSON):
+{
+  "content": "Full chapter text (2000-4000 words). CRITICAL: Escape all quotes and newlines properly. Use \\n for line breaks, \\" for quotes.",
+  "summary": "Brief summary of what happened",
+  "stateDelta": {
+    "characterStates": {"Character Name": "Current state/location/condition"},
+    "worldChanges": ["What changed in the world"],
+    "plotProgression": ["Plot points advanced"]
+  }
+}
+
+IMPORTANT JSON RULES:
+- Escape ALL quotes in content with backslash: \\"
+- Use \\n for line breaks, never actual newlines in JSON strings
+- No trailing commas
+- Ensure valid JSON syntax`;
+
+  const bibleContext = `
+═══════════════════════════════════════════════════════════
+STORY BIBLE - CANONICAL SOURCE OF TRUTH (IMMUTABLE)
+═══════════════════════════════════════════════════════════
+
+WORLD RULES (MUST OBEY):
+${storyBible.structured_sections.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+LORE TIMELINE:
+${storyBible.structured_sections.loreTimeline.map(e => `- ${e.period}: ${e.event}`).join('\n')}
+
+FACTIONS:
+${storyBible.structured_sections.factions.map(f => `- ${f.name}: ${f.description}\n  Goals: ${f.goals}`).join('\n')}
+
+TECHNOLOGY/MAGIC RULES (MUST OBEY):
+${storyBible.structured_sections.technologyMagicRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+THEMES & TONE:
+${storyBible.structured_sections.themesTone.join(', ')}
+
+⚠️ HARD CONSTRAINTS (ABSOLUTE - CANNOT VIOLATE):
+${storyBible.structured_sections.hardConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+SOFT GUIDELINES (FOLLOW WHEN POSSIBLE):
+${storyBible.structured_sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
+
+═══════════════════════════════════════════════════════════
+`;
+
+  const narrativeMemory = previousChapters.length > 0 ? `
+NARRATIVE MEMORY (PREVIOUS CHAPTERS):
+${previousChapters.map(ch => `
+Chapter ${ch.number}: ${ch.summary}
+Character States: ${JSON.stringify(ch.stateDelta.characterStates)}
+World Changes: ${ch.stateDelta.worldChanges.join('; ')}
+`).join('\n')}
+` : 'This is the first chapter.';
+
+  const basePrompt = `Write Chapter ${chapterNumber}: "${chapterOutline.title}"
+
+${bibleContext}
+
+${narrativeMemory}
+
+CHAPTER OUTLINE:
+Act: ${chapterOutline.act}
+Summary: ${chapterOutline.summary}
+Bible Citations: ${chapterOutline.bibleCitations.join(', ')}
+Character Arcs: ${chapterOutline.characterArcs.join(', ')}
+
+REQUIREMENTS:
+- Length: 2000-4000 words
+- POV: ${storyBible.metadata.pov || 'Third person'}
+- Tone: ${storyBible.metadata.tone || 'Match Story Bible'}
+- MUST obey ALL Story Bible rules
+- MUST maintain consistency with previous chapters
+- MUST follow the outline
+- MUST meet all prose quality standards (scene-based, proper rhythm, no canon leakage)
+
+Output ONLY the JSON object with content, summary, and stateDelta. No additional text.`;
+
+  // Generate with automatic regeneration for quality
+  const MAX_ATTEMPTS = 3;
+  let attempt = 0;
+  let currentPrompt = basePrompt;
+  
+  while (attempt < MAX_ATTEMPTS) {
+    attempt++;
+    
+    const response = await callAI(currentPrompt, systemPrompt);
+    
+    // Extract JSON more carefully - find the outermost braces
+    let jsonStr = '';
+    let braceCount = 0;
+    let startIndex = -1;
+    
+    for (let i = 0; i < response.length; i++) {
+      if (response[i] === '{') {
+        if (braceCount === 0) startIndex = i;
+        braceCount++;
+      } else if (response[i] === '}') {
+        braceCount--;
+        if (braceCount === 0 && startIndex !== -1) {
+          jsonStr = response.substring(startIndex, i + 1);
+          break;
+        }
+      }
+    }
+    
+    if (!jsonStr) {
+      console.error('No valid JSON found in response');
+      if (attempt >= MAX_ATTEMPTS) {
+        throw new Error('Failed to parse Chapter JSON from AI response after all attempts');
+      }
+      continue; // Try again
+    }
+    
+    let result;
+    try {
+      // Try to parse as-is first
+      result = JSON.parse(jsonStr);
+    } catch (parseError: any) {
+      console.error('JSON parse error:', parseError.message);
+      console.error('Error at position:', parseError.message.match(/position (\d+)/)?.[1]);
+      
+      // Try to fix common JSON issues
+      try {
+        let fixedJson = jsonStr;
+        
+        // Remove any trailing commas before closing braces/brackets
+        fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
+        
+        // Try to fix unescaped newlines in strings (common issue)
+        // This is a heuristic - find content between quotes and escape newlines
+        fixedJson = fixedJson.replace(/"content"\s*:\s*"([\s\S]*?)(?="summary"|"stateDelta"|$)/g, (match, content) => {
+          // Escape unescaped quotes and newlines in content
+          const escaped = content
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
+          return `"content": "${escaped}`;
+        });
+        
+        // Try parsing the fixed version
+        result = JSON.parse(fixedJson);
+        console.log('Successfully parsed after fixing JSON issues');
+      } catch (fixError: any) {
+        console.error('Still failed after fixes:', fixError.message);
+        
+        // Show the problematic area
+        const errorPos = parseInt(parseError.message.match(/position (\d+)/)?.[1] || '0');
+        const contextStart = Math.max(0, errorPos - 100);
+        const contextEnd = Math.min(jsonStr.length, errorPos + 100);
+        console.error('Context around error:', jsonStr.substring(contextStart, contextEnd));
+        
+        if (attempt >= MAX_ATTEMPTS) {
+          throw new Error(`Failed to parse Chapter JSON after all attempts: ${parseError.message}. Check server logs for details.`);
+        }
+        
+        // Add instruction to fix JSON formatting in next attempt
+        currentPrompt = `${basePrompt}
+
+⚠️ PREVIOUS ATTEMPT HAD INVALID JSON ⚠️
+Error: ${parseError.message}
+
+CRITICAL: Output VALID JSON only. Ensure:
+- Escape ALL quotes in content with backslash: \\"
+- Use \\n for line breaks (never actual newlines in JSON)
+- Use \\t for tabs
+- No trailing commas
+- Proper JSON syntax throughout
+
+Example of correct content formatting:
+"content": "She said, \\"Hello.\\"\\n\\nHe nodded."
+
+Generate the chapter again with PERFECTLY VALID JSON.`;
+        continue; // Try again with JSON fix instructions
+      }
+    }
+    
+    // Validate prose quality
+    const validation = validateChapterProse(result.content);
+    
+    // If valid or max attempts reached, return
+    if (validation.isValid || attempt >= MAX_ATTEMPTS) {
+      return {
+        ...result,
+        proseValidation: validation,
+      };
+    }
+    
+    // If invalid, regenerate with stricter constraints
+    console.log(`Prose validation failed (attempt ${attempt}/${MAX_ATTEMPTS}):`, validation.regenerationReason);
+    console.log('Issues:', validation.issues);
+    
+    // Add stricter constraints to the prompt for next attempt
+    currentPrompt = `${basePrompt}
+
+⚠️ PREVIOUS ATTEMPT FAILED PROSE VALIDATION ⚠️
+Issues detected: ${validation.issues.join('; ')}
+
+REGENERATE with STRICT adherence to:
+${validation.issues.map(issue => `- Fix: ${issue}`).join('\n')}
+
+Remember: NO canon leakage, scene-based prose, proper paragraph rhythm, strong opening.`;
+  }
+  
+  // Should never reach here, but TypeScript needs it
+  throw new Error('Failed to generate valid chapter after maximum attempts');
+}
+
+export async function checkCanonCompliance(
+  content: string,
+  storyBible: StoryBible
+): Promise<CanonEnforcementResult> {
+  const systemPrompt = `You are a Canon Compliance Checker.
+Analyze text for violations of Story Bible rules.
+
+Output JSON:
+{
+  "passed": true/false,
+  "violations": ["Critical violations of hard constraints"],
+  "warnings": ["Potential issues or soft guideline deviations"]
+}`;
+
+  const prompt = `Check this content for Story Bible compliance:
+
+STORY BIBLE HARD CONSTRAINTS:
+${storyBible.structured_sections.hardConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+WORLD RULES:
+${storyBible.structured_sections.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+CONTENT TO CHECK:
+${content.substring(0, 3000)}...
+
+Output ONLY the JSON object.`;
+
+  const response = await callAI(prompt, systemPrompt);
+  
+  const jsonMatch = response.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { passed: true, violations: [], warnings: [] };
+  }
+  
+  return JSON.parse(jsonMatch[0]);
+}

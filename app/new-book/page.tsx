@@ -1,0 +1,460 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, ArrowRight, Loader2, Check, BookOpen, FileText } from 'lucide-react';
+import { ProjectStore } from '@/lib/project-store';
+import { StoryBible, Outline } from '@/lib/types';
+
+type Step = 'setup' | 'whitepaper' | 'bible' | 'outline';
+
+export default function NewBookPage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState<Step>('setup');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [title, setTitle] = useState('');
+  const [genre, setGenre] = useState('');
+  const [pov, setPov] = useState('');
+  const [tone, setTone] = useState('');
+  const [targetWordCount, setTargetWordCount] = useState(80000);
+  const [whitepaper, setWhitepaper] = useState('');
+  const [generatedBible, setGeneratedBible] = useState<StoryBible | null>(null);
+  const [generatedOutline, setGeneratedOutline] = useState<Outline | null>(null);
+  const [projectId, setProjectId] = useState<string>('');
+
+  const handleSetupNext = () => {
+    if (!title || !genre || !pov || !tone) {
+      setError('Please fill in all fields');
+      return;
+    }
+    setError('');
+    setCurrentStep('whitepaper');
+  };
+
+  const handleWhitepaperNext = () => {
+    if (!whitepaper.trim()) {
+      setError('Please provide your story concept or whitepaper');
+      return;
+    }
+    setError('');
+    setCurrentStep('bible');
+  };
+
+  const handleGenerateBible = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/generate-bible', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          whitepaper,
+          metadata: { genre, tone, targetLength: targetWordCount, pov },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate Story Bible');
+      }
+
+      const result = await response.json();
+      console.log('Story Bible generated:', result);
+      setGeneratedBible(result.storyBible);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveBible = () => {
+    if (!generatedBible) return;
+    
+    const project = ProjectStore.createProject({
+      title,
+      genre,
+      pov,
+      tone,
+      targetWordCount,
+      status: 'draft',
+    });
+
+    // Story Bible is automatically locked (immutable) once approved
+    const lockedBible = { ...generatedBible, locked: true };
+    const bible = ProjectStore.saveStoryBible(lockedBible);
+    ProjectStore.updateProject(project.id, { storyBibleId: bible.id });
+    setProjectId(project.id);
+    setCurrentStep('outline');
+  };
+
+  const handleGenerateOutline = async () => {
+    if (!generatedBible || !projectId) {
+      console.error('Missing bible or projectId:', { generatedBible, projectId });
+      setError('Story Bible or Project ID is missing');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      console.log('Generating outline with:', { 
+        bibleId: generatedBible.id, 
+        projectId,
+        actStructure: 'three-act',
+        targetChapters: 40 
+      });
+
+      const response = await fetch('/api/generate-outline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyBible: generatedBible,
+          actStructure: 'three-act',
+          targetChapters: 40,
+        }),
+      });
+
+      console.log('Outline API response status:', response.status);
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error('Outline API error:', data);
+        throw new Error(data.error || 'Failed to generate outline');
+      }
+
+      const result = await response.json();
+      console.log('Outline generated:', result);
+      setGeneratedOutline(result.outline);
+    } catch (err: any) {
+      console.error('Outline generation error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveOutline = () => {
+    if (!generatedOutline || !projectId) return;
+
+    const outline = ProjectStore.saveOutline(generatedOutline);
+    ProjectStore.updateProject(projectId, { 
+      outlineId: outline.id,
+      status: 'in-progress',
+      totalChapters: outline.chapters.length,
+    });
+
+    router.push(`/editor/${projectId}`);
+  };
+
+  const renderStepIndicator = () => {
+    const steps = [
+      { key: 'setup', label: 'Setup', number: 1 },
+      { key: 'whitepaper', label: 'Concept', number: 2 },
+      { key: 'bible', label: 'Story Bible', number: 3 },
+      { key: 'outline', label: 'Outline', number: 4 },
+    ];
+
+    const currentIndex = steps.findIndex(s => s.key === currentStep);
+
+    return (
+      <div className="flex items-center justify-center mb-8">
+        {steps.map((step, index) => (
+          <div key={step.key} className="flex items-center">
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+              index <= currentIndex ? 'border-primary bg-primary text-primary-foreground' : 'border-muted bg-background'
+            }`}>
+              {index < currentIndex ? <Check className="h-5 w-5" /> : step.number}
+            </div>
+            {index < steps.length - 1 && (
+              <div className={`w-24 h-0.5 ${index < currentIndex ? 'bg-primary' : 'bg-muted'}`} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => router.push('/dashboard')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2">Create New Book</h1>
+          <p className="text-muted-foreground">Follow the steps to set up your AI-powered novel project</p>
+        </div>
+
+        {renderStepIndicator()}
+
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+            <p className="text-destructive">{error}</p>
+          </div>
+        )}
+
+        {currentStep === 'setup' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Book Setup</CardTitle>
+              <CardDescription>Define the basic parameters for your novel</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">Book Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter your book title"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="genre">Genre</Label>
+                <Select value={genre} onValueChange={setGenre}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fantasy">Fantasy</SelectItem>
+                    <SelectItem value="sci-fi">Science Fiction</SelectItem>
+                    <SelectItem value="mystery">Mystery</SelectItem>
+                    <SelectItem value="thriller">Thriller</SelectItem>
+                    <SelectItem value="romance">Romance</SelectItem>
+                    <SelectItem value="literary">Literary Fiction</SelectItem>
+                    <SelectItem value="historical">Historical Fiction</SelectItem>
+                    <SelectItem value="horror">Horror</SelectItem>
+                    <SelectItem value="contemporary">Contemporary</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="pov">Point of View</Label>
+                <Select value={pov} onValueChange={setPov}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select POV" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first-person">First Person</SelectItem>
+                    <SelectItem value="third-person-limited">Third Person Limited</SelectItem>
+                    <SelectItem value="third-person-omniscient">Third Person Omniscient</SelectItem>
+                    <SelectItem value="multiple-pov">Multiple POV</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="tone">Tone</Label>
+                <Select value={tone} onValueChange={setTone}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="serious">Serious</SelectItem>
+                    <SelectItem value="humorous">Humorous</SelectItem>
+                    <SelectItem value="dramatic">Dramatic</SelectItem>
+                    <SelectItem value="suspenseful">Suspenseful</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="wordcount">Target Word Count</Label>
+                <Input
+                  id="wordcount"
+                  type="number"
+                  value={targetWordCount}
+                  onChange={(e) => setTargetWordCount(parseInt(e.target.value))}
+                  min={10000}
+                  max={200000}
+                  step={10000}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Typical novel: 70,000-100,000 words
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={handleSetupNext}>
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 'whitepaper' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Story Concept</CardTitle>
+              <CardDescription>
+                Provide your story concept, world-building notes, or whitepaper. This will be used to generate your Story Bible.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="whitepaper">Story Concept / Whitepaper</Label>
+                <Textarea
+                  id="whitepaper"
+                  value={whitepaper}
+                  onChange={(e) => setWhitepaper(e.target.value)}
+                  placeholder="Describe your story world, characters, magic systems, technology, factions, timeline, themes, and any other important details..."
+                  className="min-h-[400px] font-mono text-sm"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  Include as much detail as possible about your world, characters, rules, and story elements.
+                </p>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setCurrentStep('setup')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <Button onClick={handleWhitepaperNext}>
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 'bible' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Story Bible Generation</CardTitle>
+              <CardDescription>
+                Generate a structured Story Bible from your concept. This will become the canonical source of truth for your novel.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!generatedBible ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground mb-4">
+                    Click below to generate your Story Bible from the provided concept
+                  </p>
+                  <Button onClick={handleGenerateBible} disabled={loading}>
+                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Generate Story Bible
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                    <h3 className="font-semibold mb-2">World Rules</h3>
+                    <ul className="list-disc list-inside space-y-1 text-sm mb-4">
+                      {generatedBible.structured_sections.worldRules.map((rule, i) => (
+                        <li key={i}>{rule}</li>
+                      ))}
+                    </ul>
+
+                    <h3 className="font-semibold mb-2">Hard Constraints</h3>
+                    <ul className="list-disc list-inside space-y-1 text-sm mb-4">
+                      {generatedBible.structured_sections.hardConstraints.map((constraint, i) => (
+                        <li key={i}>{constraint}</li>
+                      ))}
+                    </ul>
+
+                    <h3 className="font-semibold mb-2">Themes & Tone</h3>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      {generatedBible.structured_sections.themesTone.map((theme, i) => (
+                        <li key={i}>{theme}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button variant="outline" onClick={() => setGeneratedBible(null)}>
+                      Regenerate
+                    </Button>
+                    <Button onClick={handleApproveBible}>
+                      Approve & Continue
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 'outline' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Chapter Outline</CardTitle>
+              <CardDescription>
+                Generate a complete chapter-by-chapter outline for your novel
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!generatedOutline ? (
+                <div className="text-center py-8">
+                  <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground mb-4">
+                    Generate a structured outline with 30-50 chapters
+                  </p>
+                  <Button onClick={handleGenerateOutline} disabled={loading}>
+                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Generate Outline
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {generatedOutline.chapters.length} chapters • {generatedOutline.actStructure} structure
+                    </p>
+                    <div className="space-y-2">
+                      {generatedOutline.chapters.map((chapter) => (
+                        <div key={chapter.number} className="border-l-2 border-primary pl-3 py-1">
+                          <div className="font-medium text-sm">
+                            Chapter {chapter.number}: {chapter.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Act {chapter.act} • {chapter.summary}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button variant="outline" onClick={() => setGeneratedOutline(null)}>
+                      Regenerate
+                    </Button>
+                    <Button onClick={handleApproveOutline}>
+                      Start Writing
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
