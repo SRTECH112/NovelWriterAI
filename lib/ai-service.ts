@@ -58,13 +58,15 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     });
     return completion.choices[0]?.message?.content || '';
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
-    // Use the most widely available model to avoid not_found errors
+    // Use Sonnet for better quality and longer outputs, fallback to Haiku
     const anthroModels = [
-      'claude-3-haiku-20240307',
+      'claude-3-5-sonnet-20241022', // Best quality, 8192 max tokens
+      'claude-3-haiku-20240307',    // Fallback, 4096 max tokens
     ];
 
     let lastError: any = null;
-    const maxTokens = 4096; // Claude Haiku max limit
+    // Sonnet supports 8192, Haiku only 4096
+    const maxTokens = 8192;
     for (const model of anthroModels) {
       try {
         const message = await anthropicClient.messages.create({
