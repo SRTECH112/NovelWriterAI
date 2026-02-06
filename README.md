@@ -60,7 +60,8 @@ Novelist AI has been **completely upgraded** from a single-project tool to a ful
 
 ### Prerequisites
 - Node.js 18+ 
-- An AI API key (Gemini or OpenAI)
+- An AI API key (Anthropic Claude recommended)
+- A Neon Postgres database (free tier available)
 
 ### Installation
 
@@ -71,30 +72,43 @@ Novelist AI has been **completely upgraded** from a single-project tool to a ful
 npm install
 ```
 
-3. **Configure AI Provider**:
+3. **Set up Database**:
+   - Create a free Neon Postgres database at https://neon.tech
+   - Run the schema from `lib/db/schema.sql` in your database
+   - Copy the connection string
+
+4. **Configure Environment Variables**:
    - Copy `.env.local.example` to `.env.local`
-   - Add your API key:
+   - Add your credentials:
 
 ```env
-# For Gemini (recommended)
-AI_PROVIDER=GEMINI
-GEMINI_API_KEY=your_gemini_api_key_here
+# Database (Required)
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 
-# OR for OpenAI
-AI_PROVIDER=OPENAI
-OPENAI_API_KEY=your_openai_api_key_here
+# Authentication (Required)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_random_secret_here_generate_with_openssl
+
+# AI Provider (Required)
+AI_PROVIDER=ANTHROPIC
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Google OAuth (Optional)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 **Get API Keys**:
-- Gemini: https://makersuite.google.com/app/apikey
-- OpenAI: https://platform.openai.com/api-keys
+- Anthropic: https://console.anthropic.com/
+- Generate NEXTAUTH_SECRET: `openssl rand -base64 32`
+- Google OAuth: https://console.cloud.google.com/
 
-4. **Run the development server**:
+5. **Run the development server**:
 ```bash
 npm run dev
 ```
 
-5. **Open** [http://localhost:3000](http://localhost:3000)
+6. **Open** [http://localhost:3000](http://localhost:3000) and create an account
 
 ## 📖 Usage Workflow
 
@@ -143,8 +157,10 @@ npm run dev
 - **Chapter**: Content + summary + state delta + canon warnings
 
 ### Storage
-- LocalStorage for MVP (browser-based)
-- Easily upgradeable to database (PostgreSQL, MongoDB, etc.)
+- **Neon Postgres Database** - Production-ready persistence
+- **User Authentication** - NextAuth.js with email/password and Google OAuth
+- **Multi-device Sync** - Access your novels from anywhere
+- **Secure** - User-scoped data with row-level security
 
 ### AI Integration
 - Supports Gemini Pro and GPT-4
@@ -205,15 +221,22 @@ Edit `lib/ai-service.ts`:
 4. **Never invent rules outside the whitepaper**
 5. **Story Bible overrides creativity**
 
+## ✅ Recent Updates
+
+- ✅ **User Authentication** - Email/password and Google OAuth
+- ✅ **Postgres Database** - Production-ready data persistence
+- ✅ **Multi-device Sync** - Access your novels anywhere
+- ✅ **User-scoped Books** - Each user has their own library
+
 ## 🚧 Future Enhancements
 
-- [ ] Database integration (PostgreSQL/Supabase)
 - [ ] Export to EPUB/PDF
-- [ ] Multi-user collaboration
+- [ ] Multi-user collaboration on books
 - [ ] Version control for chapters
 - [ ] Advanced canon violation detection
 - [ ] Character relationship graphs
 - [ ] Timeline visualization
+- [ ] AI-powered plot hole detection
 
 ## 📝 License
 
