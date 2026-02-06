@@ -235,7 +235,7 @@ export default function DashboardPage() {
                     <div className="flex gap-2 pt-2">
                       <Button 
                         className="flex-1" 
-                        onClick={() => router.push(`/editor/${book.id}`)}
+                        onClick={() => router.push(`/editor-v2/${book.id}`)}
                       >
                         Open
                       </Button>
