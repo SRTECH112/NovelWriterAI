@@ -2,63 +2,107 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Plus, FileText, CheckCircle, Clock, Trash2, Copy, Edit, Download, Lock } from 'lucide-react';
-import { ProjectStore } from '@/lib/project-store';
-import { Project } from '@/lib/database-types';
+import { BookOpen, Plus, FileText, CheckCircle, Clock, Trash2, Copy, Edit, Download, Lock, Loader2 } from 'lucide-react';
 import { NavigationBar } from '@/components/NavigationBar';
+
+interface Book {
+  id: number;
+  title: string;
+  genre: string;
+  status: string;
+  progress: number;
+  current_chapter: number;
+  total_chapters: number;
+  last_edited_at: string;
+  canon_locked: boolean;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { data: session, status } = useSession();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'draft' | 'in-progress' | 'completed' | 'published'>('all');
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+    if (status === 'authenticated') {
+      loadBooks();
+    } else if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
 
-  const loadProjects = () => {
-    setProjects(ProjectStore.getAllProjects());
+  const loadBooks = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/books');
+      if (response.ok) {
+        const data = await response.json();
+        setBooks(data.books || []);
+      }
+    } catch (error) {
+      console.error('Error loading books:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredProjects = filter === 'all' 
-    ? projects 
-    : projects.filter(p => p.status === filter);
+  const filteredBooks = filter === 'all' 
+    ? books 
+    : books.filter(b => b.status === filter);
 
   const stats = {
-    total: projects.length,
-    draft: projects.filter(p => p.status === 'draft').length,
-    inProgress: projects.filter(p => p.status === 'in-progress').length,
-    completed: projects.filter(p => p.status === 'completed').length,
-    published: projects.filter(p => p.status === 'published').length,
+    total: books.length,
+    draft: books.filter(b => b.status === 'draft').length,
+    inProgress: books.filter(b => b.status === 'in-progress').length,
+    completed: books.filter(b => b.status === 'completed').length,
+    published: books.filter(b => b.status === 'published').length,
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this project? This cannot be undone.')) {
-      ProjectStore.deleteProject(id);
-      loadProjects();
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this book? This cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/books/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          loadBooks();
+        }
+      } catch (error) {
+        console.error('Error deleting book:', error);
+      }
     }
   };
 
-  const handleDuplicate = (project: Project) => {
-    const newTitle = prompt('Enter title for duplicated project:', `${project.title} (Copy)`);
-    if (newTitle) {
-      ProjectStore.duplicateProject(project.id, newTitle);
-      loadProjects();
+  const handleRename = async (book: Book) => {
+    const newTitle = prompt('Enter new title:', book.title);
+    if (newTitle && newTitle !== book.title) {
+      try {
+        const response = await fetch(`/api/books/${book.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle }),
+        });
+        if (response.ok) {
+          loadBooks();
+        }
+      } catch (error) {
+        console.error('Error renaming book:', error);
+      }
     }
   };
 
-  const handleRename = (project: Project) => {
-    const newTitle = prompt('Enter new title:', project.title);
-    if (newTitle && newTitle !== project.title) {
-      ProjectStore.updateProject(project.id, { title: newTitle });
-      loadProjects();
-    }
-  };
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
-  const getStatusColor = (status: Project['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-500';
       case 'in-progress': return 'bg-blue-500';
@@ -68,7 +112,7 @@ export default function DashboardPage() {
     }
   };
 
-  const getStatusIcon = (status: Project['status']) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'draft': return <FileText className="h-4 w-4" />;
       case 'in-progress': return <Clock className="h-4 w-4" />;
@@ -132,7 +176,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        {filteredProjects.length === 0 ? (
+        {filteredBooks.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -146,18 +190,18 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map(project => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow">
+            {filteredBooks.map(book => (
+              <Card key={book.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="line-clamp-1">{project.title}</CardTitle>
-                      <CardDescription className="mt-1">{project.genre}</CardDescription>
+                      <CardTitle className="line-clamp-1">{book.title}</CardTitle>
+                      <CardDescription className="mt-1">{book.genre}</CardDescription>
                     </div>
-                    <Badge className={getStatusColor(project.status)}>
+                    <Badge className={getStatusColor(book.status)}>
                       <div className="flex items-center gap-1">
-                        {getStatusIcon(project.status)}
-                        <span className="capitalize">{project.status.replace('-', ' ')}</span>
+                        {getStatusIcon(book.status)}
+                        <span className="capitalize">{book.status.replace('-', ' ')}</span>
                       </div>
                     </Badge>
                   </div>
@@ -166,21 +210,21 @@ export default function DashboardPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{project.progress}%</span>
+                      <span className="font-medium">{book.progress}%</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all" 
-                        style={{ width: `${project.progress}%` }}
+                        style={{ width: `${book.progress}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Chapters</span>
-                      <span className="font-medium">{project.currentChapter} / {project.totalChapters || '—'}</span>
+                      <span className="font-medium">{book.current_chapter} / {book.total_chapters || '—'}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Last edited: {new Date(project.lastEditedAt).toLocaleDateString()}</span>
-                      {project.storyBibleId && (
+                      <span className="text-muted-foreground">Last edited: {new Date(book.last_edited_at).toLocaleDateString()}</span>
+                      {book.canon_locked && (
                         <Badge variant="outline" className="text-xs">
                           <Lock className="h-3 w-3 mr-1" />
                           Canon
@@ -191,22 +235,14 @@ export default function DashboardPage() {
                     <div className="flex gap-2 pt-2">
                       <Button 
                         className="flex-1" 
-                        onClick={() => router.push(`/editor/${project.id}`)}
+                        onClick={() => router.push(`/editor/${book.id}`)}
                       >
                         Open
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => handleRename(project)}>
+                      <Button variant="outline" size="icon" onClick={() => handleRename(book)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => handleDuplicate(project)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      {project.status === 'published' && (
-                        <Button variant="outline" size="icon" onClick={() => router.push(`/export/${project.id}`)}>
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button variant="outline" size="icon" onClick={() => handleDelete(project.id)}>
+                      <Button variant="outline" size="icon" onClick={() => handleDelete(book.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
