@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import Groq from 'groq-sdk';
 import { HfInference } from '@huggingface/inference';
-import { StoryBible, Outline, Chapter, CanonEnforcementResult } from './types';
+import { StoryBible, Chapter, CanonEnforcementResult } from './types';
 import { validateChapterProse, getProseQualityPrompt, ProseValidationResult } from './prose-validator';
 
 const AI_PROVIDER = process.env.AI_PROVIDER || 'HUGGINGFACE';
@@ -272,9 +272,9 @@ export async function generateOutline(
   storyBible: StoryBible,
   actStructure: 'three-act' | 'five-act',
   targetChapters: number = 40
-): Promise<Outline['chapters']> {
-  const fallbackOutline = (): Outline['chapters'] => {
-    const chapters: Outline['chapters'] = [];
+): Promise<any[]> {
+  const fallbackOutline = (): any[] => {
+    const chapters: any[] = [];
     for (let i = 1; i <= targetChapters; i++) {
       chapters.push({
         number: i,
@@ -398,7 +398,7 @@ Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
     throw new Error('Failed to parse Outline JSON from AI response');
   }
   try {
-    return JSON.parse(jsonMatch[0]) as Outline['chapters'];
+    return JSON.parse(jsonMatch[0]) as any[];
   } catch (err: any) {
     console.error('Outline JSON parse error:', err.message);
     console.error('Attempted outline JSON (trunc):', jsonMatch[0].substring(0, 800));
@@ -409,7 +409,7 @@ Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
       const lastBrace = data.lastIndexOf('}');
       if (lastBrace > 0) {
         const repaired = data.slice(0, lastBrace + 1) + ']';
-        const parsed = JSON.parse(repaired) as Outline['chapters'];
+        const parsed = JSON.parse(repaired) as any[];
         console.error('Outline JSON repaired by truncation.');
         return parsed;
       }
@@ -423,11 +423,11 @@ Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
 
 export async function generateChapter(
   storyBible: StoryBible,
-  outline: Outline,
+  outline: any,
   chapterNumber: number,
   previousChapters: Chapter[]
 ): Promise<{ content: string; summary: string; stateDelta: Chapter['stateDelta']; proseValidation: ProseValidationResult }> {
-  const chapterOutline = outline.chapters.find(c => c.number === chapterNumber);
+  const chapterOutline = outline.chapters.find((c: any) => c.number === chapterNumber);
   if (!chapterOutline) {
     throw new Error(`Chapter ${chapterNumber} not found in outline`);
   }
@@ -524,7 +524,7 @@ ${sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
   const lastChapter = safePrev.length > 0 ? safePrev[safePrev.length - 1] : null;
   const localMemory = lastChapter ? `
 LOCAL MEMORY (IMMEDIATE CONTEXT FROM PREVIOUS CHAPTER):
-Chapter ${lastChapter.number} Summary: ${lastChapter.summary}
+Chapter ${lastChapter.chapterNumber} Summary: ${lastChapter.summary}
 Emotional State: ${lastChapter.stateDelta.emotionalState || 'Not specified'}
 Unresolved Threads: ${(lastChapter.stateDelta.unresolvedThreads || []).join('; ') || 'None'}
 Character States: ${JSON.stringify(lastChapter.stateDelta.characterStates)}
@@ -533,7 +533,7 @@ Character States: ${JSON.stringify(lastChapter.stateDelta.characterStates)}
   // STRUCTURAL MEMORY: All previous chapters
   const narrativeMemory = safePrev.length > 0 ? `
 STRUCTURAL MEMORY (ALL PREVIOUS CHAPTERS):
-${safePrev.map(ch => `Ch ${ch.number}: ${ch.summary}`).join('\n')}
+${safePrev.map((ch: any) => `Ch ${ch.chapterNumber}: ${ch.summary}`).join('\n')}
 ` : '';
 
   const basePrompt = `Write Chapter ${chapterNumber}: "${chapterOutline.title}"
@@ -553,7 +553,7 @@ Emotional Goal: ${chapterOutline.emotionalGoal || 'Not specified'}
 Conflict: ${chapterOutline.conflict || 'Not specified'}
 Relationship Movement: ${chapterOutline.relationshipMovement || 'Not specified'}
 Key Beats:
-${(chapterOutline.beats || []).map((b, i) => `  ${i + 1}. ${b}`).join('\n')}
+${(chapterOutline.beats || []).map((b: any, i: number) => `  ${i + 1}. ${b}`).join('\n')}
 Bible Citations: ${(chapterOutline.bibleCitations || []).join(', ')}
 Character Arcs: ${(chapterOutline.characterArcs || []).join(', ')}
 Hook for Next Chapter: ${chapterOutline.hookForNext || 'Not specified'}

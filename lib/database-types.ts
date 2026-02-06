@@ -21,7 +21,7 @@ export interface Project {
 
 export interface ProjectWithDetails extends Project {
   storyBible?: import('./types').StoryBible;
-  outline?: import('./types').Outline;
+  outline?: any;
   chapters: import('./types').Chapter[];
 }
 

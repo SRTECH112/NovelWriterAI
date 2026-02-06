@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Loader2, FileText, AlertTriangle, RefreshCw } from 'lucide-react';
-import { StoryBible, Outline, Chapter } from '@/lib/types';
+import { StoryBible, Chapter } from '@/lib/types';
 
 interface ChapterWriterProps {
   bible: StoryBible;
-  outline: Outline;
+  outline: any;
   chapters: Chapter[];
   onChapterGenerated: (chapter: Chapter) => void;
 }
@@ -25,7 +25,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
     plotProgression: [],
   };
 
-  const nextChapterNumber = chapters.length > 0 ? Math.max(...chapters.map(c => c.number)) + 1 : 1;
+  const nextChapterNumber = chapters.length > 0 ? Math.max(...chapters.map(c => c.chapterNumber)) + 1 : 1;
   const canGenerateNext = nextChapterNumber <= outline.chapters.length;
 
   const handleGenerateNext = async () => {
@@ -64,7 +64,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
     setError('');
 
     try {
-      const previousChaps = chapters.filter(c => c.number < chapterNumber);
+      const previousChaps = chapters.filter(c => c.chapterNumber < chapterNumber);
       const response = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,7 +150,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">Chapter {chapter.number}</span>
+                      <span className="font-semibold">Chapter {chapter.chapterNumber}</span>
                       {chapter.canonWarnings.length > 0 && (
                         <Badge variant="destructive" className="gap-1">
                           <AlertTriangle className="h-3 w-3" />
@@ -163,7 +163,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleRegenerate(chapter.number);
+                        handleRegenerate(chapter.chapterNumber);
                       }}
                       disabled={loading}
                     >
@@ -181,7 +181,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
       {selectedChapter && (
         <Card>
           <CardHeader>
-            <CardTitle>Chapter {selectedChapter.number}</CardTitle>
+            <CardTitle>Chapter {selectedChapter.chapterNumber}</CardTitle>
             <CardDescription>{selectedChapter.summary}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

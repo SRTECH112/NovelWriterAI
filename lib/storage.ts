@@ -1,4 +1,4 @@
-import { StoryBible, Outline, Chapter } from './types';
+import { StoryBible, Chapter } from './types';
 
 const STORAGE_KEYS = {
   STORY_BIBLES: 'novelist_story_bibles',
@@ -30,13 +30,13 @@ export class LocalStorage {
     return bibles.find(b => b.id === id) || null;
   }
 
-  static getOutlines(): Outline[] {
+  static getOutlines(): any[] {
     if (typeof window === 'undefined') return [];
     const data = localStorage.getItem(STORAGE_KEYS.OUTLINES);
     return data ? JSON.parse(data) : [];
   }
 
-  static saveOutline(outline: Outline): void {
+  static saveOutline(outline: any): void {
     const outlines = this.getOutlines();
     const index = outlines.findIndex(o => o.id === outline.id);
     if (index >= 0) {
@@ -47,12 +47,12 @@ export class LocalStorage {
     localStorage.setItem(STORAGE_KEYS.OUTLINES, JSON.stringify(outlines));
   }
 
-  static getOutline(id: string): Outline | null {
+  static getOutline(id: string): any | null {
     const outlines = this.getOutlines();
     return outlines.find(o => o.id === id) || null;
   }
 
-  static getOutlinesByBibleId(bibleId: string): Outline[] {
+  static getOutlinesByBibleId(bibleId: string): any[] {
     const outlines = this.getOutlines();
     return outlines.filter(o => o.storyBibleId === bibleId);
   }
@@ -76,7 +76,7 @@ export class LocalStorage {
 
   static getChaptersByOutlineId(outlineId: string): Chapter[] {
     const chapters = this.getChapters();
-    return chapters.filter(c => c.outlineId === outlineId).sort((a, b) => a.number - b.number);
+    return chapters.filter(c => (c as any).outlineId === outlineId).sort((a, b) => a.chapterNumber - b.chapterNumber);
   }
 
   static getCurrentProject(): { bibleId?: string; outlineId?: string } {

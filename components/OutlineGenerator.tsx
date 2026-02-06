@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Loader2, BookMarked } from 'lucide-react';
-import { StoryBible, Outline } from '@/lib/types';
+import { StoryBible } from '@/lib/types';
 
 interface OutlineGeneratorProps {
   bible: StoryBible;
-  onOutlineGenerated: (outline: Outline) => void;
+  onOutlineGenerated: (outline: any) => void;
 }
 
 export function OutlineGenerator({ bible, onOutlineGenerated }: OutlineGeneratorProps) {

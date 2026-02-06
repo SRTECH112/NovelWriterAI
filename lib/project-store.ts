@@ -1,5 +1,5 @@
 import { Project, ProjectWithDetails, ProjectStatus } from './database-types';
-import { StoryBible, Outline, Chapter } from './types';
+import { StoryBible, Chapter } from './types';
 
 const STORAGE_KEY = 'novelist_projects';
 const BIBLE_KEY = 'novelist_bibles';
@@ -121,13 +121,13 @@ export class ProjectStore {
     localStorage.removeItem(`${BIBLE_KEY}_${id}`);
   }
 
-  static getOutline(id: string): Outline | undefined {
+  static getOutline(id: string): any | undefined {
     if (typeof window === 'undefined') return undefined;
     const data = localStorage.getItem(`${OUTLINE_KEY}_${id}`);
     return data ? JSON.parse(data) : undefined;
   }
 
-  static saveOutline(outline: Outline): Outline {
+  static saveOutline(outline: any): any {
     localStorage.setItem(`${OUTLINE_KEY}_${outline.id}`, JSON.stringify(outline));
     return outline;
   }
@@ -152,14 +152,14 @@ export class ProjectStore {
       chapters.push(chapter);
     }
 
-    chapters.sort((a, b) => a.number - b.number);
+    chapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
     localStorage.setItem(`${CHAPTER_KEY}_${projectId}`, JSON.stringify(chapters));
 
     const project = this.getAllProjects().find(p => p.id === projectId);
     if (project) {
       this.updateProject(projectId, {
         totalChapters: chapters.length,
-        currentChapter: Math.max(...chapters.map(c => c.number), 0),
+        currentChapter: Math.max(...chapters.map(c => c.chapterNumber), 0),
         progress: project.outlineId ? Math.round((chapters.length / (this.getOutline(project.outlineId)?.chapters.length || 1)) * 100) : 0,
       });
     }

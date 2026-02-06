@@ -1,5 +1,5 @@
 import { sql } from '@/lib/db';
-import { StoryBible, Outline, Chapter } from '@/lib/types';
+import { StoryBible, Chapter } from '@/lib/types';
 
 // Book queries
 export async function createBook(userId: string, data: {
@@ -126,7 +126,7 @@ export async function getStoryBible(bookId: string): Promise<StoryBible | null> 
 }
 
 // Outline queries
-export async function saveOutline(bookId: string, outline: Outline) {
+export async function saveOutline(bookId: string, outline: any) {
   const result = await sql`
     INSERT INTO outlines (book_id, act_structure, midpoint, climax)
     VALUES (${bookId}, ${outline.actStructure}, ${outline.keyMilestones?.midpoint}, ${outline.keyMilestones?.climax})
@@ -165,7 +165,7 @@ export async function saveOutline(bookId: string, outline: Outline) {
   return outlineId;
 }
 
-export async function getOutline(bookId: string): Promise<Outline | null> {
+export async function getOutline(bookId: string): Promise<any | null> {
   const outlineResult = await sql`
     SELECT * FROM outlines WHERE book_id = ${bookId}
   `;
@@ -217,7 +217,7 @@ export async function saveChapter(bookId: string, chapter: Chapter) {
       prose_quality_issues, prose_quality_warnings, regeneration_count
     )
     VALUES (
-      ${bookId}, ${chapter.number}, ${chapter.summary}, ${chapter.content}, ${chapter.summary},
+      ${bookId}, ${chapter.chapterNumber}, ${chapter.content}, ${chapter.summary},
       ${chapter.content.split(/\s+/).length}, ${JSON.stringify(chapter.stateDelta.characterStates)},
       ${JSON.stringify(chapter.stateDelta.worldChanges)}, ${JSON.stringify(chapter.stateDelta.plotProgression)},
       ${chapter.stateDelta.emotionalState}, ${JSON.stringify(chapter.stateDelta.unresolvedThreads || [])},
@@ -256,10 +256,19 @@ export async function getChapters(bookId: string): Promise<Chapter[]> {
   
   return result.map((row: any) => ({
     id: row.id.toString(),
-    outlineId: row.outline_id?.toString() || '',
-    number: row.chapter_number,
+    bookId: row.book_id.toString(),
+    volumeId: row.volume_id?.toString() || '',
+    actId: row.act_id?.toString() || '',
+    chapterNumber: row.chapter_number,
+    globalChapterNumber: row.global_chapter_number || row.chapter_number,
+    title: row.title,
     content: row.content,
     summary: row.summary,
+    wordCount: row.word_count,
+    emotionalBeat: row.emotional_beat,
+    relationshipShift: row.relationship_shift,
+    sceneGoal: row.scene_goal,
+    hookToNext: row.hook_to_next,
     stateDelta: {
       characterStates: row.character_states || {},
       worldChanges: row.world_changes || [],
@@ -273,7 +282,9 @@ export async function getChapters(bookId: string): Promise<Chapter[]> {
       issues: row.prose_quality_issues || [],
       warnings: row.prose_quality_warnings || [],
     } : undefined,
-    createdAt: row.created_at,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+    lastGeneratedAt: row.last_generated_at.toISOString(),
     regenerationCount: row.regeneration_count,
   }));
 }
