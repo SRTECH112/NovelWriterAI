@@ -465,12 +465,30 @@ export default function NewBookPage() {
                             <span className="text-[11px] text-muted-foreground">POV: {chapter.pov || 'N/A'}</span>
                           </div>
                           <div className="text-xs text-muted-foreground">Act {chapter.act} • {chapter.summary}</div>
+                          {chapter.setting && (
+                            <div className="text-xs text-muted-foreground">📍 {chapter.setting}</div>
+                          )}
+                          {chapter.emotionalGoal && (
+                            <div className="text-xs"><span className="font-semibold">Emotional Goal:</span> {chapter.emotionalGoal}</div>
+                          )}
+                          {chapter.conflict && (
+                            <div className="text-xs"><span className="font-semibold">Conflict:</span> {chapter.conflict}</div>
+                          )}
                           {chapter.beats && (
-                            <ul className="list-disc list-inside text-xs space-y-1">
-                              {chapter.beats.map((beat, idx) => (
-                                <li key={idx}>{beat}</li>
-                              ))}
-                            </ul>
+                            <div>
+                              <div className="text-xs font-semibold mt-1">Beats:</div>
+                              <ul className="list-disc list-inside text-xs space-y-1">
+                                {chapter.beats.map((beat, idx) => (
+                                  <li key={idx}>{beat}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {chapter.relationshipMovement && (
+                            <div className="text-xs"><span className="font-semibold">Relationship:</span> {chapter.relationshipMovement}</div>
+                          )}
+                          {chapter.hookForNext && (
+                            <div className="text-xs italic text-primary">🪝 {chapter.hookForNext}</div>
                           )}
                           {chapter.canonCitations && chapter.canonCitations.length > 0 && (
                             <div className="text-[11px] text-muted-foreground">Canon: {chapter.canonCitations.join('; ')}</div>

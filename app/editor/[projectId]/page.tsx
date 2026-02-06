@@ -497,12 +497,24 @@ export default function EditorPage() {
                           <span>POV: {ch.pov || 'N/A'}</span>
                         </div>
                         <div className="text-[11px] text-muted-foreground">Act {ch.act} • {ch.summary}</div>
+                        {ch.emotionalGoal && (
+                          <div className="text-[11px]"><span className="font-semibold">Goal:</span> {ch.emotionalGoal}</div>
+                        )}
+                        {ch.conflict && (
+                          <div className="text-[11px]"><span className="font-semibold">Conflict:</span> {ch.conflict}</div>
+                        )}
                         {ch.beats && (
                           <ul className="list-disc list-inside space-y-1">
                             {ch.beats.map((b, idx) => (
                               <li key={idx}>{b}</li>
                             ))}
                           </ul>
+                        )}
+                        {ch.relationshipMovement && (
+                          <div className="text-[11px]"><span className="font-semibold">Relationship:</span> {ch.relationshipMovement}</div>
+                        )}
+                        {ch.hookForNext && (
+                          <div className="text-[11px] italic text-primary">🪝 {ch.hookForNext}</div>
                         )}
                         {ch.canonCitations && ch.canonCitations.length > 0 && (
                           <div className="text-[11px] text-muted-foreground">Canon: {ch.canonCitations.join('; ')}</div>
