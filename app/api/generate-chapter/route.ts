@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateChapter, checkCanonCompliance } from '@/lib/ai-service';
 import { StoryBible, Outline, Chapter } from '@/lib/types';
+import { requireAuth } from '@/lib/auth';
+import { saveChapter } from '@/lib/db/queries';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
     const body = await request.json();
-    const { storyBible, outline, chapterNumber, previousChapters } = body;
+    const { storyBible, outline, chapterNumber, previousChapters, bookId } = body;
 
     if (!storyBible || !outline || chapterNumber === undefined) {
       return NextResponse.json(
@@ -43,12 +46,20 @@ export async function POST(request: NextRequest) {
       regenerationCount: 0,
     };
 
+    // Save to database if bookId provided
+    if (bookId) {
+      await saveChapter(bookId, chapter);
+    }
+
     return NextResponse.json({
       chapter,
       canonCheck,
       proseValidation: result.proseValidation,
     });
   } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error generating Chapter:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate Chapter' },

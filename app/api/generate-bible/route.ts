@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateStoryBible } from '@/lib/ai-service';
 import { StoryBible } from '@/lib/types';
+import { requireAuth } from '@/lib/auth';
+import { saveStoryBible } from '@/lib/db/queries';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
     const body = await request.json();
-    const { whitepaper, metadata } = body;
+    const { whitepaper, metadata, bookId } = body;
 
     if (!whitepaper || whitepaper.trim().length === 0) {
       return NextResponse.json(
@@ -25,8 +28,16 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
+    // Save to database if bookId provided
+    if (bookId) {
+      await saveStoryBible(bookId, storyBible);
+    }
+
     return NextResponse.json({ storyBible });
   } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error generating Story Bible:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate Story Bible' },

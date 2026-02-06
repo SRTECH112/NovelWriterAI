@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateOutline } from '@/lib/ai-service';
 import { StoryBible, Outline } from '@/lib/types';
+import { requireAuth } from '@/lib/auth';
+import { saveOutline } from '@/lib/db/queries';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
     const body = await request.json();
-    const { storyBible, actStructure, targetChapters } = body;
+    const { storyBible, actStructure, targetChapters, bookId } = body;
 
     if (!storyBible || !storyBible.id) {
       return NextResponse.json(
@@ -35,8 +38,16 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
+    // Save to database if bookId provided
+    if (bookId) {
+      await saveOutline(bookId, outline);
+    }
+
     return NextResponse.json({ outline });
   } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error generating Outline:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate Outline' },
