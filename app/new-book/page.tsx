@@ -478,7 +478,7 @@ export default function NewBookPage() {
                             <div>
                               <div className="text-xs font-semibold mt-1">Beats:</div>
                               <ul className="list-disc list-inside text-xs space-y-1">
-                                {chapter.beats.map((beat, idx) => (
+                                {chapter.beats.map((beat: any, idx: number) => (
                                   <li key={idx}>{beat}</li>
                                 ))}
                               </ul>
