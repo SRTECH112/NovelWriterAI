@@ -189,22 +189,17 @@ export async function generateStoryBible(
     hardConstraints: [],
     softGuidelines: [],
   });
-  const systemPrompt = `You are a Story Bible Generator for long-form novel writing.
-Your job is to extract and structure canonical information from a whitepaper/lore document.
+  const systemPrompt = `You are a Story Bible Generator. Extract and structure canonical information from the whitepaper.
 
-CRITICAL RULES:
-1. Extract ONLY information present in the whitepaper
-2. Do NOT invent or add new information
-3. Be precise and specific
-4. Hard Constraints are ABSOLUTE rules that cannot be violated
-5. Soft Guidelines are stylistic preferences
+RULES:
+1. Extract ONLY what's in the whitepaper
+2. Be CONCISE - use short phrases, not full sentences
+3. Hard Constraints = absolute rules
+4. Soft Guidelines = stylistic preferences
 
-OUTPUT FORMAT (STRICT):
-- Respond with ONLY the JSON object wrapped in <json>...</json>
-- No markdown, no code fences, no HTML, no explanations
-- No trailing commas anywhere
-- Use double quotes for all keys and strings
-- Example: <json>{"worldRules":["rule1"],"loreTimeline":[{"period":"Era","event":"..."}],"factions":[{"name":"","description":"","goals":""}],"technologyMagicRules":["rule"],"themesTone":["theme"],"hardConstraints":["rule"],"softGuidelines":["pref"]}</json>
+OUTPUT: JSON wrapped in <json>...</json>. No markdown, no explanations.
+KEEP IT BRIEF - each item should be 5-15 words maximum.
+Example: <json>{"worldRules":["Elite school setting","Power hierarchy"],"loreTimeline":[{"period":"High School","event":"Kate meets Marvin"}],"factions":[{"name":"Villaluz Group","description":"Global conglomerate","goals":"Maintain power"}],"technologyMagicRules":[],"themesTone":["Romance","Class conflict"],"hardConstraints":["No magic","Modern setting"],"softGuidelines":["Emotional focus"]}</json>
 `;
 
   const metadataStr = Object.entries(metadata)
@@ -212,7 +207,7 @@ OUTPUT FORMAT (STRICT):
     .map(([k, v]) => `${k}: ${v}`)
     .join('\n');
 
-  const prompt = `Generate a comprehensive Story Bible from this whitepaper.
+  const prompt = `Extract key information from this whitepaper into a concise Story Bible.
 
 METADATA:
 ${metadataStr}
@@ -220,7 +215,7 @@ ${metadataStr}
 WHITEPAPER:
 ${whitepaper}
 
-Extract and structure all canonical information. Output ONLY the JSON object, no additional text.`;
+IMPORTANT: Keep each item SHORT (5-15 words). Focus on essential facts only. Output ONLY the JSON object.`;
 
   console.log('🔵 Generating Story Bible with AI provider:', AI_PROVIDER);
   const response = await callAI(prompt, systemPrompt);
