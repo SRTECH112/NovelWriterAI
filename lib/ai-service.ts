@@ -60,18 +60,16 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
     // Use Sonnet for better quality and longer outputs, fallback to Haiku
     const anthroModels = [
-      'claude-3-5-sonnet-20241022', // Best quality, 8192 max tokens
-      'claude-3-haiku-20240307',    // Fallback, 4096 max tokens
+      { name: 'claude-3-5-sonnet-20241022', maxTokens: 8192 }, // Best quality
+      { name: 'claude-3-haiku-20240307', maxTokens: 4096 },    // Fallback
     ];
 
     let lastError: any = null;
-    // Sonnet supports 8192, Haiku only 4096
-    const maxTokens = 8192;
-    for (const model of anthroModels) {
+    for (const modelConfig of anthroModels) {
       try {
         const message = await anthropicClient.messages.create({
-          model,
-      max_tokens: maxTokens,
+          model: modelConfig.name,
+      max_tokens: modelConfig.maxTokens,
       temperature: 0.7,
       system: (systemPrompt || 'You are a helpful AI assistant.') + '\n\nCRITICAL: Respond with ONLY JSON wrapped in <json>...</json>. No markdown, no code fences, no HTML, no explanations.',
       messages: [
@@ -263,11 +261,15 @@ Extract and structure all canonical information. Output ONLY the JSON object, no
   }
   
   try {
-    return JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('✅ Successfully parsed Story Bible JSON');
+    console.log('📊 Sections:', Object.keys(parsed));
+    return parsed;
   } catch (parseError: any) {
-    console.error('JSON parse error:', parseError.message);
-    console.error('Attempted to parse (truncated):', jsonMatch[0].substring(0, 800));
-    console.error('Raw cleaned response (truncated):', cleanedResponse.substring(0, 800));
+    console.error('❌ JSON parse error:', parseError.message);
+    console.error('📄 Attempted to parse (truncated):', jsonMatch[0].substring(0, 800));
+    console.error('🔍 Raw cleaned response (truncated):', cleanedResponse.substring(0, 800));
+    console.error('⚠️ FALLING BACK TO EMPTY BIBLE - This means the AI response was invalid');
     // Fallback to minimal structured bible to avoid blocking the user or extra AI retries
     return fallbackBible();
   }
