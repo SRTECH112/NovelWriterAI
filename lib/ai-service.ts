@@ -548,6 +548,13 @@ ${safePrev.map((ch: any) => `Ch ${ch.chapterNumber}: ${ch.summary}`).join('\n')}
 
   const basePrompt = `Write Chapter ${chapterNumber}: "${chapterOutline.title}"
 
+⚠️ CRITICAL: STORY BIBLE IS ABSOLUTE CANON ⚠️
+You MUST follow the Story Bible EXACTLY. Do NOT contradict any established facts.
+- Character roles, relationships, and status are FIXED
+- World rules and setting details are IMMUTABLE
+- Timeline and events must match the bible
+- Any deviation from the Story Bible is a CRITICAL ERROR
+
 ${bibleContext}
 
 ${localMemory}
