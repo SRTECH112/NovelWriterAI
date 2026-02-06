@@ -505,7 +505,7 @@ export default function EditorPage() {
                         )}
                         {ch.beats && (
                           <ul className="list-disc list-inside space-y-1">
-                            {ch.beats.map((b, idx) => (
+                            {ch.beats.map((b: any, idx: number) => (
                               <li key={idx}>{b}</li>
                             ))}
                           </ul>
