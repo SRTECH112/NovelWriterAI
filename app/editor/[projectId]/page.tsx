@@ -285,7 +285,7 @@ export default function EditorPage() {
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
-              {project.outline?.chapters.map((outlineChapter) => {
+              {project.outline?.chapters.map((outlineChapter: any) => {
                 const generatedChapter = project.chapters.find(c => c.chapterNumber === outlineChapter.number);
                 const isSelected = selectedChapter?.chapterNumber === outlineChapter.number;
 
@@ -490,7 +490,7 @@ export default function EditorPage() {
                 <div className="space-y-2 border-t pt-3">
                   <h3 className="font-semibold text-sm">Outline (beats view)</h3>
                   <div className="space-y-2 text-xs max-h-64 overflow-y-auto pr-2">
-                    {project.outline.chapters.map((ch) => (
+                    {project.outline.chapters.map((ch: any) => (
                       <div key={ch.number} className="border-l-2 border-primary/40 pl-3 py-1 space-y-1">
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>Ch {ch.number}: {ch.title}</span>
