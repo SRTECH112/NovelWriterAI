@@ -22,6 +22,7 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showBible, setShowBible] = useState(true);
+  const [regenerating, setRegenerating] = useState<'bible' | 'outline' | null>(null);
 
   useEffect(() => {
     loadProject();
@@ -120,6 +121,79 @@ export default function EditorPage() {
     if (!project?.outline) return false;
     const nextNum = getNextChapterNumber();
     return nextNum <= project.outline.chapters.length;
+  };
+
+  const handleRegenerateBible = async () => {
+    if (!project?.storyBible) return;
+    
+    setRegenerating('bible');
+    setError('');
+
+    try {
+      const response = await fetch('/api/generate-bible', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          whitepaper: project.storyBible.raw_whitepaper,
+          metadata: project.storyBible.metadata,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to regenerate Story Bible');
+      }
+
+      const result = await response.json();
+      const updatedBible = { ...result.storyBible, locked: project.storyBible.locked };
+      ProjectStore.saveStoryBible(updatedBible);
+      loadProject();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setRegenerating(null);
+    }
+  };
+
+  const handleRegenerateOutline = async () => {
+    if (!project?.storyBible) return;
+
+    setRegenerating('outline');
+    setError('');
+
+    try {
+      const response = await fetch('/api/generate-outline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyBible: project.storyBible,
+          actStructure: project.outline?.actStructure || 'three-act',
+          targetChapters: project.outline?.chapters.length || 40,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to regenerate Outline');
+      }
+
+      const result = await response.json();
+      ProjectStore.saveOutline(result.outline);
+      ProjectStore.updateProject(projectId, { outlineId: result.outline.id });
+      loadProject();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setRegenerating(null);
+    }
+  };
+
+  const handleToggleLock = () => {
+    if (!project?.storyBible) return;
+
+    const updatedBible = { ...project.storyBible, locked: !project.storyBible.locked };
+    ProjectStore.saveStoryBible(updatedBible);
+    loadProject();
   };
 
   if (!project) {
@@ -339,13 +413,15 @@ export default function EditorPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="default" size="sm" onClick={() => alert('Regenerate Story Bible from concept in New Book flow')}>
+              <Button variant="default" size="sm" onClick={handleRegenerateBible} disabled={loading || regenerating === 'bible' || !project.storyBible}>
+                {regenerating === 'bible' ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                 Regenerate Bible
               </Button>
-              <Button variant="default" size="sm" onClick={() => alert('Regenerate Outline from locked Bible in New Book flow')}>
+              <Button variant="default" size="sm" onClick={handleRegenerateOutline} disabled={loading || regenerating === 'outline' || !project.storyBible}>
+                {regenerating === 'outline' ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                 Regenerate Outline
               </Button>
-              <Button variant={project.storyBible?.locked ? 'outline' : 'default'} size="sm" onClick={() => alert('Canon lock persists in local storage after approval')}>
+              <Button variant={project.storyBible?.locked ? 'outline' : 'default'} size="sm" onClick={handleToggleLock} disabled={!project.storyBible}>
                 <Lock className="h-4 w-4 mr-1" /> {project.storyBible?.locked ? 'Canon Locked' : 'Approve & Lock Canon'}
               </Button>
             </div>
