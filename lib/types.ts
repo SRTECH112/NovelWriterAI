@@ -54,6 +54,10 @@ export interface ChapterOutline {
   pov?: string;
   setting?: string;
   canonCitations?: string[];
+  emotionalGoal?: string;
+  conflict?: string;
+  relationshipMovement?: string;
+  hookForNext?: string;
 }
 
 export interface Chapter {
@@ -77,6 +81,8 @@ export interface StateDelta {
   characterStates: Record<string, string>;
   worldChanges: string[];
   plotProgression: string[];
+  emotionalState?: string;
+  unresolvedThreads?: string[];
 }
 
 export interface NarrativeMemory {

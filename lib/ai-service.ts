@@ -327,8 +327,8 @@ OUTPUT FORMAT (STRICT):
 - No markdown, no code fences, no HTML, no explanations
 - No trailing commas anywhere
 - Use double quotes for all keys/strings
-- Each chapter object MUST have: number, title, summary (1-2 sentences max), beats (3-6 bullet strings), canonCitations (array of strings), pov, setting, characterArcs, bibleCitations
-- Example: <json>[{"number":1,"title":"","summary":"","beats":["beat"],"canonCitations":["ref"],"pov":"","setting":"","characterArcs":["arc"],"bibleCitations":["rule 1"]}]</json>
+- Each chapter object MUST have: number, title, summary (1-2 sentences max), beats (3-6 bullet strings), canonCitations, pov, setting, characterArcs, bibleCitations, emotionalGoal, conflict, relationshipMovement, hookForNext
+- Example: <json>[{"number":1,"title":"","summary":"","beats":["beat"],"canonCitations":["ref"],"pov":"","setting":"","characterArcs":["arc"],"bibleCitations":["rule 1"],"emotionalGoal":"goal","conflict":"conflict","relationshipMovement":"movement","hookForNext":"hook"}]</json>
 
 ${bibleContext}`;
 
@@ -350,6 +350,12 @@ For EACH chapter include:
 - pov (character or perspective)
 - setting (concise)
 - characterArcs
+- emotionalGoal (what emotional journey/goal for POV character)
+- conflict (main tension/obstacle in this chapter)
+- relationshipMovement (how key relationships change)
+- hookForNext (cliffhanger or question for next chapter)
+
+This is a Wattpad/anime fanfic style outline. Focus on emotional beats and relationship dynamics.
 
 Output ONLY the JSON array wrapped in <json>...</json>. No extra text.`;
 
@@ -468,7 +474,9 @@ OUTPUT FORMAT (JSON):
   "stateDelta": {
     "characterStates": {"Character Name": "Current state/location/condition"},
     "worldChanges": ["What changed in the world"],
-    "plotProgression": ["Plot points advanced"]
+    "plotProgression": ["Plot points advanced"],
+    "emotionalState": "POV character's emotional state at chapter end",
+    "unresolvedThreads": ["Questions or tensions left unresolved for next chapter"]
   }
 }
 
@@ -512,26 +520,43 @@ ${sections.softGuidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
     stateDelta: ch.stateDelta || { characterStates: {}, worldChanges: [], plotProgression: [] },
   }));
 
-  const narrativeMemory = safePrev.length > 0 ? `
-NARRATIVE MEMORY (PREVIOUS CHAPTERS):
-${safePrev.map(ch => `
-Chapter ${ch.number}: ${ch.summary}
-Character States: ${JSON.stringify(ch.stateDelta.characterStates)}
-World Changes: ${ch.stateDelta.worldChanges.join('; ')}
-`).join('\n')}
+  // LOCAL MEMORY: Previous chapter context
+  const lastChapter = safePrev.length > 0 ? safePrev[safePrev.length - 1] : null;
+  const localMemory = lastChapter ? `
+LOCAL MEMORY (IMMEDIATE CONTEXT FROM PREVIOUS CHAPTER):
+Chapter ${lastChapter.number} Summary: ${lastChapter.summary}
+Emotional State: ${lastChapter.stateDelta.emotionalState || 'Not specified'}
+Unresolved Threads: ${(lastChapter.stateDelta.unresolvedThreads || []).join('; ') || 'None'}
+Character States: ${JSON.stringify(lastChapter.stateDelta.characterStates)}
 ` : 'This is the first chapter.';
+
+  // STRUCTURAL MEMORY: All previous chapters
+  const narrativeMemory = safePrev.length > 0 ? `
+STRUCTURAL MEMORY (ALL PREVIOUS CHAPTERS):
+${safePrev.map(ch => `Ch ${ch.number}: ${ch.summary}`).join('\n')}
+` : '';
 
   const basePrompt = `Write Chapter ${chapterNumber}: "${chapterOutline.title}"
 
 ${bibleContext}
 
+${localMemory}
+
 ${narrativeMemory}
 
-CHAPTER OUTLINE:
+CHAPTER OUTLINE (STRUCTURAL LAYER):
 Act: ${chapterOutline.act}
 Summary: ${chapterOutline.summary}
+POV: ${chapterOutline.pov || storyBible.metadata.pov || 'Third person'}
+Setting: ${chapterOutline.setting || 'Not specified'}
+Emotional Goal: ${chapterOutline.emotionalGoal || 'Not specified'}
+Conflict: ${chapterOutline.conflict || 'Not specified'}
+Relationship Movement: ${chapterOutline.relationshipMovement || 'Not specified'}
+Key Beats:
+${(chapterOutline.beats || []).map((b, i) => `  ${i + 1}. ${b}`).join('\n')}
 Bible Citations: ${(chapterOutline.bibleCitations || []).join(', ')}
 Character Arcs: ${(chapterOutline.characterArcs || []).join(', ')}
+Hook for Next Chapter: ${chapterOutline.hookForNext || 'Not specified'}
 
 REQUIREMENTS:
 - Length: 2000-4000 words
@@ -550,11 +575,21 @@ OPENING SCENE ENFORCEMENT (APPLIES TO FIRST 300 WORDS):
 - Short paragraphs (1–2 sentences), frequent line breaks, casual voice; internal thoughts can be standalone lines
 - If the first 3 paragraphs read like a synopsis, rewrite them until they feel like overheard real life
 
-CHAPTER 1 / EARLY CHAPTER STYLE (anime/Wattpad fanfic):
-- Do NOT start with exposition, first-day narration, or arrival scenes
-- Forbidden openings include: "I took a deep breath", "This was my first day", "I arrived at", "It all began", "I woke up"
-- Start in media res with voice-first internal monologue and immediate emotional context
-- Reveal context only through interaction and social cues, not through explanations
+WATTPAD / ANIME FANFIC WRITING STYLE (MANDATORY FOR ALL CHAPTERS):
+- Voice-first, emotion-first, explanation later
+- Casual, diary-like internal voice (first-person or close third-person)
+- Short-to-medium paragraphs with frequent line breaks
+- Strong focus on romantic tension and emotional beats
+- Dialogue reveals character and context naturally
+- No info-dumps, no world explanations, no character introductions
+
+CHAPTER 1 / EARLY CHAPTER RULES (CRITICAL):
+- MUST begin with a personal, emotional micro-moment already in progress
+- Forbidden openings: "I took a deep breath", "This was my first day", "I arrived at", "It all began", "I woke up", "The day started"
+- Start in media res with internal monologue showing immediate emotional state
+- Reader should feel dropped into the MC's life mid-moment
+- No setting explanations, no character introductions, no backstory
+- Context emerges through action, dialogue, and social cues only
 
 Output ONLY the JSON object with content, summary, and stateDelta. No additional text.`;
 
