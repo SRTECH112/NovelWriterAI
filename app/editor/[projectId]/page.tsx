@@ -84,14 +84,14 @@ export default function EditorPage() {
     setError('');
 
     try {
-      const previousChaps = project.chapters.filter(c => c.number < chapter.number);
+      const previousChaps = project.chapters.filter(c => c.chapterNumber < chapter.chapterNumber);
       const response = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storyBible: project.storyBible,
           outline: project.outline,
-          chapterNumber: chapter.number,
+          chapterNumber: chapter.chapterNumber,
           previousChapters: previousChaps,
         }),
       });
@@ -114,7 +114,7 @@ export default function EditorPage() {
 
   const getNextChapterNumber = () => {
     if (!project?.chapters.length) return 1;
-    return Math.max(...project.chapters.map(c => c.number)) + 1;
+    return Math.max(...project.chapters.map(c => c.chapterNumber)) + 1;
   };
 
   const canGenerateNext = () => {
@@ -237,7 +237,7 @@ export default function EditorPage() {
             <div className="border-l pl-4">
               <h1 className="font-semibold">{project.title}</h1>
               <p className="text-xs text-muted-foreground">
-                {selectedChapter ? `Chapter ${selectedChapter.number}` : 'No chapter selected'}
+                {selectedChapter ? `Chapter ${selectedChapter.chapterNumber}` : 'No chapter selected'}
               </p>
             </div>
           </div>
@@ -286,8 +286,8 @@ export default function EditorPage() {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {project.outline?.chapters.map((outlineChapter) => {
-                const generatedChapter = project.chapters.find(c => c.number === outlineChapter.number);
-                const isSelected = selectedChapter?.number === outlineChapter.number;
+                const generatedChapter = project.chapters.find(c => c.chapterNumber === outlineChapter.number);
+                const isSelected = selectedChapter?.chapterNumber === outlineChapter.number;
 
                 return (
                   <div
@@ -319,7 +319,7 @@ export default function EditorPage() {
             <>
               <div className="p-4 border-b bg-card flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">Chapter {safeSelectedChapter.number}</h2>
+                  <h2 className="text-xl font-semibold">Chapter {safeSelectedChapter.chapterNumber}</h2>
                   <p className="text-sm text-muted-foreground">{safeSelectedChapter.summary}</p>
                 </div>
                 <Button 
