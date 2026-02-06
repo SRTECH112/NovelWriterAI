@@ -64,7 +64,7 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     ];
 
     let lastError: any = null;
-    const maxTokens = 8000; // increased for Story Bible generation
+    const maxTokens = 4096; // Claude Haiku max limit
     for (const model of anthroModels) {
       try {
         const message = await anthropicClient.messages.create({
