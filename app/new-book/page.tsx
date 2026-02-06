@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, ArrowRight, Loader2, Check, BookOpen, FileText } from 'lucide-react';
 import { ProjectStore } from '@/lib/project-store';
 import { StoryBible, Outline } from '@/lib/types';
+import { NavigationBar } from '@/components/NavigationBar';
 
 type Step = 'setup' | 'whitepaper' | 'bible' | 'outline';
 
@@ -187,6 +188,7 @@ export default function NewBookPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NavigationBar />
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="mb-6">
           <Button variant="ghost" onClick={() => router.push('/dashboard')}>

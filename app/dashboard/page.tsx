@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Plus, FileText, CheckCircle, Clock, Trash2, Copy, Edit, Download } from 'lucide-react';
+import { BookOpen, Plus, FileText, CheckCircle, Clock, Trash2, Copy, Edit, Download, Lock } from 'lucide-react';
 import { ProjectStore } from '@/lib/project-store';
 import { Project } from '@/lib/database-types';
+import { NavigationBar } from '@/components/NavigationBar';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -79,6 +80,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NavigationBar />
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -169,15 +171,21 @@ export default function DashboardPage() {
                     <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all" 
-                        data-progress={project.progress}
+                        style={{ width: `${project.progress}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Chapters</span>
                       <span className="font-medium">{project.currentChapter} / {project.totalChapters || '—'}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Last edited: {new Date(project.lastEditedAt).toLocaleDateString()}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Last edited: {new Date(project.lastEditedAt).toLocaleDateString()}</span>
+                      {project.storyBibleId && (
+                        <Badge variant="outline" className="text-xs">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Canon
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="flex gap-2 pt-2">

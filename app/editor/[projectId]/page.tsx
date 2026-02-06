@@ -10,6 +10,7 @@ import { ArrowLeft, Plus, RefreshCw, Loader2, BookOpen, FileText, AlertTriangle,
 import { ProjectStore } from '@/lib/project-store';
 import { ProjectWithDetails } from '@/lib/database-types';
 import { Chapter } from '@/lib/types';
+import { NavigationBar } from '@/components/NavigationBar';
 
 export default function EditorPage() {
   const router = useRouter();
@@ -150,6 +151,7 @@ export default function EditorPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <NavigationBar />
       {/* Top Bar */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
