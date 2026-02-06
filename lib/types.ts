@@ -31,41 +31,74 @@ export interface Faction {
   goals: string;
 }
 
-export interface Outline {
+export interface Volume {
   id: string;
-  storyBibleId: string;
-  actStructure: 'three-act' | 'five-act';
-  chapters: ChapterOutline[];
-  keyMilestones: {
-    midpoint?: number;
-    climax?: number;
-  };
+  bookId: string;
+  volumeNumber: number;
+  title: string;
+  theme?: string;
+  emotionalPromise?: string;
+  relationshipStateStart?: string;
+  relationshipStateEnd?: string;
+  majorTurningPoint?: string;
+  targetChapterCount: number;
+  status: 'draft' | 'in-progress' | 'completed';
   createdAt: string;
+  updatedAt: string;
 }
 
-export interface ChapterOutline {
-  number: number;
-  title: string;
-  summary: string;
-  act: number;
-  bibleCitations: string[];
-  characterArcs: string[];
-  beats?: string[];
-  pov?: string;
-  setting?: string;
-  canonCitations?: string[];
-  emotionalGoal?: string;
-  conflict?: string;
-  relationshipMovement?: string;
-  hookForNext?: string;
+export interface Act {
+  id: string;
+  volumeId: string;
+  actNumber: number;
+  title?: string;
+  narrativePurpose: 'setup' | 'rising-tension' | 'fracture' | 'crisis' | 'resolution' | 'payoff';
+  pacing: 'slow' | 'medium' | 'fast';
+  emotionalPressure: number;
+  characterDevelopmentFocus?: string;
+  targetChapterCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VolumeMemory {
+  id: string;
+  volumeId: string;
+  unresolvedArcs: string[];
+  characterProgression: Record<string, string>;
+  relationshipEvolution?: string;
+  thematicThreads: string[];
+  promisesMade: string[];
+  promisesFulfilled: string[];
+  updatedAt: string;
+}
+
+export interface ActMemory {
+  id: string;
+  actId: string;
+  currentTensionLevel: number;
+  emotionalDirection?: string;
+  activeConflicts: string[];
+  proximityEvents: string[];
+  misunderstandings: string[];
+  updatedAt: string;
 }
 
 export interface Chapter {
   id: string;
-  outlineId: string;
-  number: number;
+  bookId: string;
+  volumeId: string;
+  actId: string;
+  chapterNumber: number;
+  globalChapterNumber: number;
+  title?: string;
   content: string;
-  summary: string;
+  summary?: string;
+  wordCount: number;
+  emotionalBeat?: string;
+  relationshipShift?: string;
+  sceneGoal?: string;
+  hookToNext?: string;
   stateDelta: StateDelta;
   canonWarnings: string[];
   proseQuality?: {
@@ -74,6 +107,8 @@ export interface Chapter {
     warnings: string[];
   };
   createdAt: string;
+  updatedAt: string;
+  lastGeneratedAt: string;
   regenerationCount: number;
 }
 
@@ -86,15 +121,24 @@ export interface StateDelta {
 }
 
 export interface NarrativeMemory {
-  chapterSummaries: Map<number, string>;
-  characterStates: Map<string, string>;
-  worldState: string[];
+  global: {
+    storyBible: StoryBible;
+  };
+  volume: VolumeMemory;
+  act: ActMemory;
+  local: {
+    chapterSummaries: Map<number, string>;
+    characterStates: Map<string, string>;
+    worldState: string[];
+  };
 }
 
 export interface GenerationRequest {
-  type: 'story-bible' | 'outline' | 'chapter';
+  type: 'story-bible' | 'volume' | 'act' | 'chapter';
+  bookId?: string;
   storyBibleId?: string;
-  outlineId?: string;
+  volumeId?: string;
+  actId?: string;
   chapterNumber?: number;
 }
 
