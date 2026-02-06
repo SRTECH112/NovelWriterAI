@@ -51,14 +51,14 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     }
     messages.push({ role: 'user', content: prompt });
     
-    console.log('🔵 Using OpenAI GPT-4 Turbo');
+    console.log('🔵 Using OpenAI GPT-4o');
     const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o',
       messages,
       temperature: 0.7,
       max_tokens: 4096, // Increased for longer chapters
     });
-    console.log('✅ GPT-4 response received');
+    console.log('✅ GPT-4o response received');
     return completion.choices[0]?.message?.content || '';
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
     // Try different Sonnet model identifiers
