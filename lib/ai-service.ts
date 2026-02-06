@@ -58,15 +58,18 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     });
     return completion.choices[0]?.message?.content || '';
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
-    // Use Sonnet for better quality and longer outputs, fallback to Haiku
+    // Try multiple Sonnet versions, then fall back to Haiku
     const anthroModels = [
-      { name: 'claude-3-5-sonnet-20241022', maxTokens: 8192 }, // Best quality
-      { name: 'claude-3-haiku-20240307', maxTokens: 4096 },    // Fallback
+      { name: 'claude-3-5-sonnet-20241022', maxTokens: 8192 },
+      { name: 'claude-3-5-sonnet-20240620', maxTokens: 8192 },
+      { name: 'claude-3-sonnet-20240229', maxTokens: 4096 },
+      { name: 'claude-3-haiku-20240307', maxTokens: 4096 },
     ];
 
     let lastError: any = null;
     for (const modelConfig of anthroModels) {
       try {
+        console.log(`🔵 Trying Claude model: ${modelConfig.name} (max_tokens: ${modelConfig.maxTokens})`);
         const message = await anthropicClient.messages.create({
           model: modelConfig.name,
       max_tokens: modelConfig.maxTokens,
@@ -82,6 +85,7 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     
     const content = message.content[0];
     if (content.type === 'text') {
+      console.log(`✅ Successfully used Claude model: ${modelConfig.name}`);
       // Clean up any potential markdown or HTML wrapping
       let text = content.text.trim();
       
