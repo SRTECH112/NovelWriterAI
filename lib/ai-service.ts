@@ -64,7 +64,7 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     ];
 
     let lastError: any = null;
-    const maxTokens = 3000; // allow fuller outputs while staying under limits
+    const maxTokens = 8000; // increased for Story Bible generation
     for (const model of anthroModels) {
       try {
         const message = await anthropicClient.messages.create({
@@ -217,7 +217,10 @@ ${whitepaper}
 
 Extract and structure all canonical information. Output ONLY the JSON object, no additional text.`;
 
+  console.log('🔵 Generating Story Bible with AI provider:', AI_PROVIDER);
   const response = await callAI(prompt, systemPrompt);
+  console.log('🔵 AI Response received, length:', response.length);
+  console.log('🔵 AI Response preview:', response.substring(0, 500));
   
   // Clean up response - remove markdown code blocks, HTML, smart quotes, and trailing commas
   let cleanedResponse = response
