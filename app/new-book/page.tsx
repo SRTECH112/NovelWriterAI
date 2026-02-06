@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, ArrowRight, Loader2, Check, BookOpen, FileText } from 'lucide-react';
 import { ProjectStore } from '@/lib/project-store';
-import { StoryBible, Outline } from '@/lib/types';
+import { StoryBible } from '@/lib/types';
 import { NavigationBar } from '@/components/NavigationBar';
 
 type Step = 'setup' | 'whitepaper' | 'bible' | 'outline';
@@ -28,7 +28,7 @@ export default function NewBookPage() {
   const [targetWordCount, setTargetWordCount] = useState(80000);
   const [whitepaper, setWhitepaper] = useState('');
   const [generatedBible, setGeneratedBible] = useState<StoryBible | null>(null);
-  const [generatedOutline, setGeneratedOutline] = useState<Outline | null>(null);
+  const [generatedOutline, setGeneratedOutline] = useState<any>(null);
   const [projectId, setProjectId] = useState<string>('');
 
   const handleSetupNext = () => {
