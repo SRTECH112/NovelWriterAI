@@ -46,7 +46,7 @@ export default function ExportPage() {
     }
 
     project.chapters.forEach(chapter => {
-      content += `# Chapter ${chapter.number}\n\n`;
+      content += `# Chapter ${chapter.chapterNumber}\n\n`;
       content += `${chapter.content}\n\n`;
       content += `---\n\n`;
     });
