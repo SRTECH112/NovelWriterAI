@@ -58,12 +58,12 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     });
     return completion.choices[0]?.message?.content || '';
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
-    // Try multiple Sonnet versions, then fall back to Haiku
+    // Use working Sonnet model (deprecated but available), then try newer versions, fallback to Haiku
     const anthroModels = [
-      { name: 'claude-3-5-sonnet-20241022', maxTokens: 8192 },
-      { name: 'claude-3-5-sonnet-20240620', maxTokens: 8192 },
-      { name: 'claude-3-sonnet-20240229', maxTokens: 4096 },
-      { name: 'claude-3-haiku-20240307', maxTokens: 4096 },
+      { name: 'claude-3-sonnet-20240229', maxTokens: 4096 },   // Deprecated but works
+      { name: 'claude-3-5-sonnet-20240620', maxTokens: 8192 }, // Try newer if available
+      { name: 'claude-3-5-sonnet-20241022', maxTokens: 8192 }, // Latest
+      { name: 'claude-3-haiku-20240307', maxTokens: 4096 },    // Fallback
     ];
 
     let lastError: any = null;
