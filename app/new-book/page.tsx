@@ -458,7 +458,7 @@ export default function NewBookPage() {
                       {generatedOutline.chapters.length} chapters • {generatedOutline.actStructure} structure
                     </p>
                     <div className="space-y-3">
-                      {generatedOutline.chapters.map((chapter) => (
+                      {generatedOutline.chapters.map((chapter: any) => (
                         <div key={chapter.number} className="border-l-2 border-primary pl-3 py-2 space-y-1">
                           <div className="font-medium text-sm flex justify-between items-center">
                             <span>Chapter {chapter.number}: {chapter.title}</span>
