@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { StoryBible, Chapter, Volume, Act, VolumeMemory, ActMemory } from '@/lib/types';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
@@ -233,29 +233,30 @@ ${outlineMetadata ? '- STRICTLY FOLLOW THE OUTLINE BEATS ABOVE - This is the nar
 
 Write the chapter now as valid JSON.`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 16000,
-    temperature: 0.8,
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
     messages: [
-      { role: 'user', content: systemPrompt + '\n\n' + userPrompt }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ],
+    temperature: 0.8,
+    max_completion_tokens: 16000,
   });
 
-  const textContent = response.content.find(c => c.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text response from AI');
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No response from AI');
   }
 
   let result;
   try {
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in response');
     }
     result = JSON.parse(jsonMatch[0]);
   } catch (error) {
-    console.error('Failed to parse AI response:', textContent.text);
+    console.error('Failed to parse AI response:', content);
     throw new Error('Invalid JSON response from AI');
   }
 
