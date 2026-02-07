@@ -36,9 +36,10 @@ export async function POST(request: NextRequest) {
 
     let volumeId: string;
     if (volumeResult.length === 0) {
+      const totalChapters = parsedStructure.acts.reduce((sum, act) => sum + act.targetChapterCount, 0);
       const newVolume = await sql`
-        INSERT INTO volumes (book_id, volume_number, title, description, target_chapters)
-        VALUES (${bookId}, 1, 'Volume 1', 'Main story volume', ${parsedStructure.acts.reduce((sum, act) => sum + act.targetChapterCount, 0)})
+        INSERT INTO volumes (book_id, volume_number, title, target_chapter_count)
+        VALUES (${bookId}, 1, 'Volume 1', ${totalChapters})
         RETURNING id
       `;
       volumeId = newVolume[0].id.toString();
