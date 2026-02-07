@@ -449,50 +449,60 @@ export default function NewBookPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold mb-2">World Rules</h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedBible.structured_sections.worldRules.map((rule, i) => (
-                          <li key={i}>{rule}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {generatedBible.structured_sections?.worldRules?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">World Rules</h3>
+                        <ul className="list-disc list-inside space-y-1">
+                          {generatedBible.structured_sections.worldRules.map((rule: string, i: number) => (
+                            <li key={i}>{rule}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold mb-2">Hard Constraints</h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedBible.structured_sections.hardConstraints.map((constraint, i) => (
-                          <li key={i}>{constraint}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {generatedBible.structured_sections?.hardConstraints?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Hard Constraints</h3>
+                        <ul className="list-disc list-inside space-y-1">
+                          {generatedBible.structured_sections.hardConstraints.map((constraint: string, i: number) => (
+                            <li key={i}>{constraint}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold mb-2">Themes & Tone</h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedBible.structured_sections.themesTone.map((theme, i) => (
-                          <li key={i}>{theme}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {generatedBible.structured_sections?.themesTone?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Themes & Tone</h3>
+                        <ul className="list-disc list-inside space-y-1">
+                          {generatedBible.structured_sections.themesTone.map((theme: string, i: number) => (
+                            <li key={i}>{theme}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold mb-2">Factions</h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedBible.structured_sections.factions.map((faction, i) => (
-                          <li key={i}><span className="font-semibold">{faction.name}:</span> {faction.description} (Goals: {faction.goals})</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {generatedBible.structured_sections?.factions?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Factions</h3>
+                        <ul className="list-disc list-inside space-y-1">
+                          {generatedBible.structured_sections.factions.map((faction: any, i: number) => (
+                            <li key={i}><span className="font-semibold">{faction.name}:</span> {faction.description} (Goals: {faction.goals})</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                    <div>
-                      <h3 className="font-semibold mb-2">Timeline</h3>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedBible.structured_sections.loreTimeline.map((event, i) => (
-                          <li key={i}><span className="font-semibold">{event.period}:</span> {event.event}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {generatedBible.structured_sections?.loreTimeline?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Timeline</h3>
+                        <ul className="list-disc list-inside space-y-1">
+                          {generatedBible.structured_sections.loreTimeline.map((event: any, i: number) => (
+                            <li key={i}><span className="font-semibold">{event.period}:</span> {event.event}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex justify-between pt-4">
