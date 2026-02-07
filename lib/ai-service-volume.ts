@@ -140,14 +140,14 @@ PROSE QUALITY:
 - Avoid clichés and purple prose
 
 ⚠️ CHAPTER LENGTH REQUIREMENTS (MANDATORY) ⚠️
-MINIMUM: 1,500 words
+MINIMUM: 1,000 words (STRICT - do not stop before this)
 TARGET: 1,500–2,000 words
 MAXIMUM: 2,500 words (only if scene demands it)
 
 YOU MUST CONTINUE WRITING UNTIL:
 ✅ All outline beats are meaningfully covered (not summarized)
 ✅ A natural narrative beat is reached
-✅ Word count is at least 1,500 words
+✅ Word count is at least 1,000 words (MANDATORY MINIMUM)
 
 FORBIDDEN:
 ❌ Ending early due to token limits
@@ -196,7 +196,7 @@ ${outlineMetadata.pacingHint || act.pacing}
 
 BEAT EXPANSION RULES:
 - EXPAND each beat into full scenes with dialogue, action, and internal monologue
-- Each beat should take 300-500 words to fully realize
+- Each beat should take 200-400 words to fully realize
 - Add sensory details, atmosphere, and emotional reactions
 - Show character dynamics through interaction
 - DO NOT skip or summarize any beats
@@ -204,7 +204,7 @@ BEAT EXPANSION RULES:
 - DO NOT rush through scenes
 - Anime/Wattpad pacing: slow emotional buildup, internal thoughts, scene continuity
 
-TOTAL CHAPTER LENGTH: 1,500-2,000 words (strict minimum)
+TOTAL CHAPTER LENGTH: 1,000 words minimum (aim for 1,500-2,000 words)
 ` : '';
 
   const userPrompt = `${globalContext}
@@ -240,7 +240,7 @@ Write the chapter now as valid JSON.`;
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.8,
-    max_completion_tokens: 8000, // Enough for 2000 words + JSON overhead
+    max_completion_tokens: 12000, // Increased to encourage longer chapters (2000+ words)
   });
 
   const content = response.choices[0]?.message?.content;
