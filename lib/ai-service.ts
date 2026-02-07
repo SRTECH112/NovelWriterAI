@@ -331,6 +331,7 @@ OUTPUT FORMAT (strict JSON):
   const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     console.error('❌ No JSON found in structure generation response');
+    console.error('Response preview:', cleanedResponse.slice(0, 500));
     throw new Error('Failed to generate structure: No valid JSON returned');
   }
 
@@ -341,7 +342,25 @@ OUTPUT FORMAT (strict JSON):
     return parsed;
   } catch (parseError: any) {
     console.error('❌ JSON parse error:', parseError.message);
-    throw new Error('Failed to generate structure: Invalid JSON structure');
+    console.error('Malformed JSON preview:', jsonMatch[0].slice(0, 1000));
+    console.error('Full response length:', response.length);
+    
+    // Try to fix common JSON issues
+    try {
+      // Remove trailing commas
+      let fixedJson = jsonMatch[0]
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+      
+      const fixedParsed = JSON.parse(fixedJson);
+      console.log('✅ Fixed JSON and parsed successfully');
+      return fixedParsed;
+    } catch (fixError) {
+      console.error('❌ Could not auto-fix JSON');
+      throw new Error('Failed to generate structure: Invalid JSON structure. Please try again.');
+    }
   }
 }
 
