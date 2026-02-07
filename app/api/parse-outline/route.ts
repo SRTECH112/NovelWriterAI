@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
       // Create Act
       const actResult = await sql`
         INSERT INTO acts (
-          book_id, volume_id, act_number, title, narrative_purpose,
-          emotional_pressure, pacing, target_chapters
+          volume_id, act_number, title, narrative_purpose,
+          emotional_pressure, pacing, target_chapter_count
         )
         VALUES (
-          ${bookId}, ${volumeId}, ${actData.actNumber}, ${actData.title || `Act ${actData.actNumber}`},
+          ${volumeId}, ${actData.actNumber}, ${actData.title || `Act ${actData.actNumber}`},
           ${actData.narrativePurpose}, ${actData.emotionalPressure}, ${actData.pacing},
           ${actData.targetChapterCount}
         )
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           narrative_purpose = EXCLUDED.narrative_purpose,
           emotional_pressure = EXCLUDED.emotional_pressure,
           pacing = EXCLUDED.pacing,
-          target_chapters = EXCLUDED.target_chapters
+          target_chapter_count = EXCLUDED.target_chapter_count
         RETURNING id
       `;
 
