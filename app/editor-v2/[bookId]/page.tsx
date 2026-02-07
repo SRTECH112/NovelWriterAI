@@ -159,6 +159,65 @@ export default function EditorV2Page() {
     }
   };
 
+  const handleGenerateChapterContent = async (chapter: Chapter) => {
+    if (!currentVolumeId || !chapter.actId) return;
+
+    // Check if chapter already has content
+    const hasContent = chapter.content && chapter.content.trim().length > 100 && !chapter.content.includes('[OUTLINE PLACEHOLDER]');
+    
+    if (hasContent) {
+      const confirmed = window.confirm(
+        'This chapter already has content. Do you want to regenerate it?\n\n' +
+        'Click OK to overwrite the existing content.\n' +
+        'Click Cancel to keep the current content.'
+      );
+      
+      if (!confirmed) return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const actChapters = chapters[chapter.actId] || [];
+      const previousChapters = actChapters.filter(c => c.chapterNumber < chapter.chapterNumber);
+
+      const res = await fetch('/api/generate-chapter-v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookId,
+          volumeId: currentVolumeId,
+          actId: chapter.actId,
+          chapterNumber: chapter.chapterNumber,
+          globalChapterNumber: chapter.globalChapterNumber,
+          previousChapters,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate chapter');
+      }
+
+      const result = await res.json();
+      
+      // Update chapters in state
+      setChapters(prev => ({
+        ...prev,
+        [chapter.actId]: (prev[chapter.actId] || []).map(c => 
+          c.id === chapter.id ? result.chapter : c
+        ),
+      }));
+      
+      setCurrentChapter(result.chapter);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGenerateChapter = async (actId: string, chapterNumber: number) => {
     if (!currentVolumeId || !storyBible) return;
 
@@ -338,20 +397,40 @@ export default function EditorV2Page() {
         <div className="flex-1 overflow-y-auto p-6">
           {currentChapter ? (
             <div className="max-w-4xl mx-auto">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold mb-2">
-                  Chapter {currentChapter.chapterNumber}
-                  {currentChapter.title && `: ${currentChapter.title}`}
-                </h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{currentChapter.wordCount} words</span>
-                  {currentChapter.emotionalBeat && (
+              <div className="mb-6 flex items-start justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2">
+                    Chapter {currentChapter.chapterNumber}
+                    {currentChapter.title && `: ${currentChapter.title}`}
+                  </h1>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{currentChapter.wordCount} words</span>
+                    {currentChapter.emotionalBeat && (
+                      <>
+                        <span>•</span>
+                        <span>{currentChapter.emotionalBeat}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleGenerateChapterContent(currentChapter)}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Generate chapter content using AI"
+                >
+                  {loading ? (
                     <>
-                      <span>•</span>
-                      <span>{currentChapter.emotionalBeat}</span>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4" />
+                      Generate Chapter
                     </>
                   )}
-                </div>
+                </button>
               </div>
 
               <div className="prose prose-lg max-w-none">
