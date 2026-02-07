@@ -51,15 +51,44 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     }
     messages.push({ role: 'user', content: prompt });
     
-    console.log('🔵 Using OpenAI GPT-5.2');
-    const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-5.2',
-      messages,
-      temperature: 0.7,
-      max_completion_tokens: 8192, // GPT-5.2 uses max_completion_tokens instead of max_tokens
-    });
-    console.log('✅ GPT-5.2 response received');
-    return completion.choices[0]?.message?.content || '';
+    // Try GPT-5.2 first, fallback to GPT-4o if it fails
+    let model = 'gpt-5.2';
+    let useMaxCompletionTokens = true;
+    
+    try {
+      console.log('🔵 Using OpenAI GPT-5.2');
+      const completion = await openaiClient.chat.completions.create({
+        model: 'gpt-5.2',
+        messages,
+        temperature: 0.7,
+        max_completion_tokens: 8192,
+      });
+      
+      const content = completion.choices[0]?.message?.content || '';
+      console.log('✅ GPT-5.2 response received, length:', content.length);
+      
+      if (!content || content.trim().length === 0) {
+        console.warn('⚠️ GPT-5.2 returned empty response, falling back to GPT-4o');
+        throw new Error('Empty response from GPT-5.2');
+      }
+      
+      return content;
+    } catch (gpt5Error: any) {
+      console.warn('⚠️ GPT-5.2 failed:', gpt5Error.message);
+      console.log('🔵 Falling back to GPT-4o');
+      
+      // Fallback to GPT-4o
+      const fallbackCompletion = await openaiClient.chat.completions.create({
+        model: 'gpt-4o',
+        messages,
+        temperature: 0.7,
+        max_tokens: 8192,
+      });
+      
+      const content = fallbackCompletion.choices[0]?.message?.content || '';
+      console.log('✅ GPT-4o response received, length:', content.length);
+      return content;
+    }
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
     // Try different Sonnet model identifiers
     const anthroModels = [
