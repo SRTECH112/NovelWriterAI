@@ -51,14 +51,14 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
     }
     messages.push({ role: 'user', content: prompt });
     
-    console.log('🔵 Using OpenAI GPT-4o');
+    console.log('🔵 Using OpenAI GPT-5.2');
     const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-5.2',
       messages,
       temperature: 0.7,
-      max_tokens: 4096, // Increased for longer chapters
+      max_tokens: 8192, // Increased for GPT-5.2's longer output capability
     });
-    console.log('✅ GPT-4o response received');
+    console.log('✅ GPT-5.2 response received');
     return completion.choices[0]?.message?.content || '';
   } else if (AI_PROVIDER === 'ANTHROPIC' && anthropicClient) {
     // Try different Sonnet model identifiers
