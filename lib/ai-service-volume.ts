@@ -240,7 +240,7 @@ Write the chapter now as valid JSON.`;
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.8,
-    max_completion_tokens: 16000,
+    max_completion_tokens: 8000, // Enough for 2000 words + JSON overhead
   });
 
   const content = response.choices[0]?.message?.content;

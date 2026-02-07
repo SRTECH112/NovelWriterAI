@@ -123,10 +123,23 @@ export async function POST(request: NextRequest) {
       structureContext
     );
 
-    const canonCheck = await checkCanonCompliance(result.content, storyBible);
-
-    // Save chapter to database
+    // Validate word count meets minimum requirement
     const wordCount = result.content.split(/\s+/).length;
+    console.log(`📊 Generated chapter word count: ${wordCount}`);
+    
+    if (wordCount < 1500) {
+      console.warn(`⚠️ Chapter too short (${wordCount} words). Minimum is 1500 words.`);
+      return NextResponse.json(
+        { 
+          error: `Chapter generation failed: Only ${wordCount} words generated (minimum 1500 required). The AI may have stopped early. Please try again.`,
+          wordCount,
+          minRequired: 1500
+        },
+        { status: 400 }
+      );
+    }
+
+    const canonCheck = await checkCanonCompliance(result.content, storyBible);
     const chapterResult = await sql`
       INSERT INTO chapters (
         book_id, volume_id, act_id, chapter_number, global_chapter_number,
