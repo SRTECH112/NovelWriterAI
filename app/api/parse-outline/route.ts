@@ -52,10 +52,44 @@ export async function POST(request: NextRequest) {
     let globalChapterNumber = 1;
 
     for (const actData of parsedStructure.acts) {
+      // Map narrative purpose to valid database values
+      const mapNarrativePurpose = (purpose: string): string => {
+        const normalized = purpose.toLowerCase().trim();
+        const validValues = ['setup', 'rising-tension', 'fracture', 'crisis', 'resolution', 'payoff'];
+        
+        // If already valid, return it
+        if (validValues.includes(normalized)) return normalized;
+        
+        // Map common variations
+        if (normalized.includes('setup') || normalized.includes('introduction') || normalized.includes('establish')) return 'setup';
+        if (normalized.includes('rising') || normalized.includes('tension') || normalized.includes('complication')) return 'rising-tension';
+        if (normalized.includes('fracture') || normalized.includes('break') || normalized.includes('disruption')) return 'fracture';
+        if (normalized.includes('crisis') || normalized.includes('climax') || normalized.includes('peak')) return 'crisis';
+        if (normalized.includes('resolution') || normalized.includes('aftermath') || normalized.includes('reconcil')) return 'resolution';
+        if (normalized.includes('payoff') || normalized.includes('closure') || normalized.includes('ending')) return 'payoff';
+        
+        // Default based on act number
+        if (actData.actNumber === 1) return 'setup';
+        if (actData.actNumber === 2) return 'rising-tension';
+        if (actData.actNumber === 3) return 'fracture';
+        if (actData.actNumber === 4) return 'crisis';
+        if (actData.actNumber === 5) return 'resolution';
+        return 'payoff';
+      };
+      
+      // Map pacing to valid values
+      const mapPacing = (pace: string): string => {
+        const normalized = pace.toLowerCase().trim();
+        if (['slow', 'medium', 'fast'].includes(normalized)) return normalized;
+        if (normalized.includes('slow') || normalized.includes('deliberate')) return 'slow';
+        if (normalized.includes('fast') || normalized.includes('quick') || normalized.includes('rapid')) return 'fast';
+        return 'medium';
+      };
+      
       // Truncate long values to fit database constraints
       const title = (actData.title || `Act ${actData.actNumber}`).slice(0, 100);
-      const narrativePurpose = (actData.narrativePurpose || '').slice(0, 500);
-      const pacing = (actData.pacing || 'medium').slice(0, 50);
+      const narrativePurpose = mapNarrativePurpose(actData.narrativePurpose || '');
+      const pacing = mapPacing(actData.pacing || 'medium');
       
       // Create Act
       const actResult = await sql`

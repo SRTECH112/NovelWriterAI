@@ -273,9 +273,15 @@ ${rawOutline
 
 CRITICAL REQUIREMENTS:
 - Each act MUST have a unique title derived from the story (NOT "Act 1", "Act 2")
-- narrativePurpose should describe what happens in this act (e.g., "Kate discovers Marvin's identity", "Love triangle intensifies")
+- narrativePurpose MUST be one of: "setup", "rising-tension", "fracture", "crisis", "resolution", "payoff"
+  * setup: Introduce world, characters, status quo
+  * rising-tension: Build conflict, complications arise
+  * fracture: Major disruption, relationships strain
+  * crisis: Peak conflict, hard choices
+  * resolution: Aftermath, reconciliation
+  * payoff: Deliver on promises, closure
 - emotionalPressure: 1-10 scale (1=calm, 5=moderate tension, 10=crisis)
-- pacing: "slow" (character-driven), "medium" (balanced), "fast" (action/revelation)
+- pacing MUST be one of: "slow", "medium", "fast"
 - targetChapterCount: how many chapters this act should have
 - Each chapter needs: title, summary, plotBeats (3-5 beats), emotionalIntent, characterFocus, pacingHint
 
@@ -291,7 +297,7 @@ OUTPUT FORMAT (strict JSON):
     {
       "actNumber": 1,
       "title": "The New Transfer Student",
-      "narrativePurpose": "Kate meets Marvin and discovers his secret",
+      "narrativePurpose": "setup",
       "emotionalPressure": 3,
       "pacing": "slow",
       "targetChapterCount": 8,
