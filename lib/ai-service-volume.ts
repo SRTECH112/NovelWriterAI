@@ -140,14 +140,14 @@ PROSE QUALITY:
 - Avoid clichés and purple prose
 
 ⚠️ CHAPTER LENGTH REQUIREMENTS (MANDATORY) ⚠️
-MINIMUM: 1,000 words (STRICT - do not stop before this)
+MINIMUM: 700 words (STRICT - do not stop before this)
 TARGET: 1,500–2,000 words
 MAXIMUM: 2,500 words (only if scene demands it)
 
 YOU MUST CONTINUE WRITING UNTIL:
 ✅ All outline beats are meaningfully covered (not summarized)
 ✅ A natural narrative beat is reached
-✅ Word count is at least 1,000 words (MANDATORY MINIMUM)
+✅ Word count is at least 700 words (MANDATORY MINIMUM)
 
 FORBIDDEN:
 ❌ Ending early due to token limits
@@ -204,7 +204,7 @@ BEAT EXPANSION RULES:
 - DO NOT rush through scenes
 - Anime/Wattpad pacing: slow emotional buildup, internal thoughts, scene continuity
 
-TOTAL CHAPTER LENGTH: 1,000 words minimum (aim for 1,500-2,000 words)
+TOTAL CHAPTER LENGTH: 700 words minimum (aim for 1,500-2,000 words)
 ` : '';
 
   const userPrompt = `${globalContext}

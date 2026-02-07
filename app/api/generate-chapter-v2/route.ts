@@ -127,13 +127,13 @@ export async function POST(request: NextRequest) {
     const wordCount = result.content.split(/\s+/).length;
     console.log(`📊 Generated chapter word count: ${wordCount}`);
     
-    if (wordCount < 1000) {
-      console.warn(`⚠️ Chapter too short (${wordCount} words). Minimum is 1000 words.`);
+    if (wordCount < 700) {
+      console.warn(`⚠️ Chapter too short (${wordCount} words). Minimum is 700 words.`);
       return NextResponse.json(
         { 
-          error: `Chapter generation failed: Only ${wordCount} words generated (minimum 1000 required). The AI may have stopped early. Please try again.`,
+          error: `Chapter generation failed: Only ${wordCount} words generated (minimum 700 required). The AI may have stopped early. Please try again.`,
           wordCount,
-          minRequired: 1000
+          minRequired: 700
         },
         { status: 400 }
       );
