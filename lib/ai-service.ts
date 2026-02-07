@@ -56,7 +56,7 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
       model: 'gpt-5.2',
       messages,
       temperature: 0.7,
-      max_tokens: 8192, // Increased for GPT-5.2's longer output capability
+      max_completion_tokens: 8192, // GPT-5.2 uses max_completion_tokens instead of max_tokens
     });
     console.log('✅ GPT-5.2 response received');
     return completion.choices[0]?.message?.content || '';
