@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
       const narrativePurpose = mapNarrativePurpose(actData.narrativePurpose || '');
       const pacing = mapPacing(actData.pacing || 'medium');
       
+      console.log(`Act ${actData.actNumber}: "${actData.narrativePurpose}" → "${narrativePurpose}"`);
+      
       // Create Act
       const actResult = await sql`
         INSERT INTO acts (
