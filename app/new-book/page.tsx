@@ -27,7 +27,9 @@ export default function NewBookPage() {
   const [tone, setTone] = useState('');
   const [targetWordCount, setTargetWordCount] = useState(80000);
   const [whitepaper, setWhitepaper] = useState('');
+  const [storyOutline, setStoryOutline] = useState('');
   const [generatedBible, setGeneratedBible] = useState<StoryBible | null>(null);
+  const [parsedOutline, setParsedOutline] = useState<any>(null);
   const [generatedOutline, setGeneratedOutline] = useState<any>(null);
   const [projectId, setProjectId] = useState<string>('');
 
@@ -127,6 +129,30 @@ export default function NewBookPage() {
       }
 
       setProjectId(bookId.toString());
+
+      // Parse story outline if provided
+      if (storyOutline.trim()) {
+        console.log('📝 Parsing story outline...');
+        const outlineRes = await fetch('/api/parse-outline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookId,
+            rawOutline: storyOutline,
+          }),
+        });
+
+        if (!outlineRes.ok) {
+          const data = await outlineRes.json();
+          console.error('Outline parse error:', data);
+          // Don't fail the whole flow, just warn
+          setError(`Warning: ${data.error || 'Failed to parse outline'}. You can add chapters manually.`);
+        } else {
+          const outlineData = await outlineRes.json();
+          console.log('✅ Outline parsed:', outlineData);
+          setParsedOutline(outlineData);
+        }
+      }
       
       // Redirect to editor-v2
       router.push(`/editor-v2/${bookId}`);
@@ -358,10 +384,27 @@ export default function NewBookPage() {
                   value={whitepaper}
                   onChange={(e) => setWhitepaper(e.target.value)}
                   placeholder="Describe your story world, characters, magic systems, technology, factions, timeline, themes, and any other important details..."
-                  className="min-h-[400px] font-mono text-sm"
+                  className="min-h-[300px] font-mono text-sm"
                 />
                 <p className="text-sm text-muted-foreground mt-2">
                   Include as much detail as possible about your world, characters, rules, and story elements.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="storyOutline">
+                  Story / Chapter Outline{' '}
+                  <span className="text-muted-foreground font-normal">(optional but recommended)</span>
+                </Label>
+                <Textarea
+                  id="storyOutline"
+                  value={storyOutline}
+                  onChange={(e) => setStoryOutline(e.target.value)}
+                  placeholder="Paste your chapter outline here. Can be:&#10;- Bullet points&#10;- Chapter summaries&#10;- Act breakdowns&#10;- Messy notes&#10;&#10;Example:&#10;Act 1 - Setup&#10;Ch 1: Kate's first day, meets Marvin&#10;Ch 2: Discovers Marvin's secret identity&#10;Ch 3: Love triangle begins with Boy A&#10;&#10;Act 2 - Rising Tension&#10;Ch 4: Kate and Marvin grow closer&#10;..."
+                  className="min-h-[300px] font-mono text-sm"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  AI will parse this into structured Acts and Chapters. Supports plain text, bullet points, or informal notes.
                 </p>
               </div>
 

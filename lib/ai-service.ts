@@ -179,6 +179,112 @@ async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
   );
 }
 
+export async function parseStoryOutline(
+  rawOutline: string,
+  storyBible: StoryBible
+): Promise<{
+  acts: Array<{
+    actNumber: number;
+    title: string;
+    narrativePurpose: string;
+    emotionalPressure: number;
+    pacing: string;
+    targetChapterCount: number;
+    chapters: Array<{
+      chapterNumber: number;
+      title: string;
+      summary: string;
+      plotBeats: string[];
+      emotionalIntent: string;
+      characterFocus: string[];
+      pacingHint: string;
+      rawOutlineText: string;
+    }>;
+  }>;
+}> {
+  const systemPrompt = `You are a Story Structure Parser. Convert user-written outlines into structured Acts and Chapters.
+
+RULES:
+1. Detect act boundaries (setup, rising action, climax, resolution)
+2. Extract chapter summaries and beats
+3. Identify emotional intent and character focus
+4. Preserve original outline text for each chapter
+5. Assign pacing hints (slow/medium/fast)
+
+OUTPUT: JSON with acts array, each containing chapters array.`;
+
+  const prompt = `Parse this story outline into structured Acts and Chapters.
+
+STORY BIBLE CONTEXT:
+Genre: ${storyBible.metadata.genre || 'Not specified'}
+Tone: ${storyBible.metadata.tone || 'Not specified'}
+POV: ${storyBible.metadata.pov || 'Not specified'}
+
+RAW OUTLINE:
+${rawOutline}
+
+INSTRUCTIONS:
+- Detect act boundaries (if not explicit, infer from narrative flow)
+- Each act should have 3-15 chapters
+- Extract plot beats from each chapter description
+- Identify emotional intent (e.g., "tension building", "romantic moment", "revelation")
+- List character focus for each chapter
+- Assign pacing: "slow" (character moments), "medium" (balanced), "fast" (action/revelation)
+- Preserve the original outline text for each chapter
+
+OUTPUT FORMAT (strict JSON):
+{
+  "acts": [
+    {
+      "actNumber": 1,
+      "title": "Setup",
+      "narrativePurpose": "Establish world and characters",
+      "emotionalPressure": 3,
+      "pacing": "medium",
+      "targetChapterCount": 5,
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "title": "First Day",
+          "summary": "Kate arrives at school and meets Marvin",
+          "plotBeats": ["Kate enters school", "Notices Marvin", "First interaction"],
+          "emotionalIntent": "Curiosity and attraction",
+          "characterFocus": ["Kate", "Marvin"],
+          "pacingHint": "slow",
+          "rawOutlineText": "Ch 1: Kate's first day, meets Marvin"
+        }
+      ]
+    }
+  ]
+}`;
+
+  console.log('🔵 Parsing story outline with AI');
+  const response = await callAI(prompt, systemPrompt);
+  console.log('🔵 AI outline parse response length:', response.length);
+
+  // Extract JSON
+  let cleanedResponse = response
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
+    .replace(/<\/?json>/gi, '')
+    .trim();
+
+  const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('❌ No JSON found in outline parse response');
+    throw new Error('Failed to parse outline: No valid JSON returned');
+  }
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log('✅ Successfully parsed outline into', parsed.acts?.length || 0, 'acts');
+    return parsed;
+  } catch (parseError: any) {
+    console.error('❌ JSON parse error:', parseError.message);
+    throw new Error('Failed to parse outline: Invalid JSON structure');
+  }
+}
+
 export async function generateStoryBible(
   whitepaper: string,
   metadata: StoryBible['metadata']

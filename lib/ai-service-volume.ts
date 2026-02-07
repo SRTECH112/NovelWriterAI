@@ -22,6 +22,15 @@ export async function generateChapterWithVolumeContext(
     emotionalBeat?: string;
     relationshipShift?: string;
     sceneGoal?: string;
+  },
+  outlineMetadata?: {
+    title?: string;
+    summary?: string;
+    plotBeats?: string[];
+    emotionalIntent?: string;
+    characterFocus?: string[];
+    pacingHint?: string;
+    rawOutlineText?: string;
   }
 ): Promise<{
   content: string;
@@ -102,6 +111,39 @@ OUTPUT FORMAT (JSON):
   }
 }`;
 
+  // Build outline enforcement if metadata exists
+  const outlineEnforcement = outlineMetadata ? `
+⚠️ CRITICAL: OUTLINE BEAT ENFORCEMENT ⚠️
+This chapter MUST strictly follow the user's outline. DO NOT deviate from these beats.
+
+ORIGINAL OUTLINE TEXT:
+${outlineMetadata.rawOutlineText || 'Not provided'}
+
+REQUIRED PLOT BEATS (MUST ALL APPEAR IN ORDER):
+${outlineMetadata.plotBeats?.map((beat, i) => `${i + 1}. ${beat}`).join('\n') || 'Not specified'}
+
+EMOTIONAL INTENT (REQUIRED):
+${outlineMetadata.emotionalIntent || 'Not specified'}
+
+CHARACTER FOCUS (MUST FEATURE):
+${outlineMetadata.characterFocus?.join(', ') || 'Not specified'}
+
+PACING REQUIREMENT:
+${outlineMetadata.pacingHint || act.pacing} (slow = 1500-2000 words with emotional depth, medium = 2000-3000 words balanced, fast = 2500-4000 words action-driven)
+
+EXPANSION RULES:
+- EXPAND each beat into full scenes (1500-2000 words per chapter)
+- Add dialogue, internal monologue, sensory details
+- Show emotional reactions and character dynamics
+- Build atmosphere and tension
+- DO NOT skip or summarize any beats
+- DO NOT add beats not in the outline
+- DO NOT rush through scenes
+- Anime/Wattpad pacing: slow emotional buildup, internal thoughts, scene continuity
+
+TARGET LENGTH: 1500-2000 words (strict)
+` : '';
+
   const userPrompt = `${globalContext}
 
 ${volumeContext}
@@ -110,17 +152,21 @@ ${actContext}
 
 ${localContext}
 
+${outlineEnforcement}
+
 CHAPTER DIRECTIVE:
 Write Chapter ${chapterNumber} (Global #${globalChapterNumber})
+${outlineMetadata?.title ? `Title: "${outlineMetadata.title}"` : ''}
 ${chapterPrompt?.emotionalBeat ? `Emotional Beat: ${chapterPrompt.emotionalBeat}` : ''}
 ${chapterPrompt?.relationshipShift ? `Relationship Shift: ${chapterPrompt.relationshipShift}` : ''}
 ${chapterPrompt?.sceneGoal ? `Scene Goal: ${chapterPrompt.sceneGoal}` : ''}
 
 Remember:
 - You are in Act ${act.actNumber} (${act.narrativePurpose})
-- Pacing should be ${act.pacing}
+- Pacing should be ${outlineMetadata?.pacingHint || act.pacing}
 - Emotional pressure is at ${act.emotionalPressure}/10
 - This chapter contributes to the volume theme: ${volume.theme || 'the overall arc'}
+${outlineMetadata ? '- STRICTLY FOLLOW THE OUTLINE BEATS ABOVE - This is the narrative spine' : ''}
 
 Write the chapter now as valid JSON.`;
 

@@ -59,6 +59,22 @@ export async function POST(request: NextRequest) {
     const volumeMemory = await getVolumeMemory(volumeId);
     const actMemory = await getActMemory(actId);
 
+    // Check if this chapter has outline metadata (from parsed outline)
+    const existingChapter = await sql`
+      SELECT character_states FROM chapters 
+      WHERE act_id = ${actId} AND chapter_number = ${chapterNumber}
+      LIMIT 1
+    `;
+
+    let outlineMetadata;
+    if (existingChapter.length > 0 && existingChapter[0].character_states) {
+      const characterStates = existingChapter[0].character_states;
+      if (characterStates.outlineMetadata) {
+        outlineMetadata = characterStates.outlineMetadata;
+        console.log('📝 Found outline metadata for chapter:', outlineMetadata);
+      }
+    }
+
     // Generate chapter with full volume/act context
     const result = await generateChapterWithVolumeContext(
       storyBible,
@@ -73,7 +89,8 @@ export async function POST(request: NextRequest) {
         emotionalBeat,
         relationshipShift,
         sceneGoal,
-      }
+      },
+      outlineMetadata
     );
 
     const canonCheck = await checkCanonCompliance(result.content, storyBible);
