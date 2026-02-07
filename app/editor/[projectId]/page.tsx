@@ -34,6 +34,13 @@ export default function EditorPage() {
       router.push('/dashboard');
       return;
     }
+    
+    // Redirect to editor-v2 if this is a Volume/Act book (no outline)
+    if (!proj.outline) {
+      router.push(`/editor-v2/${projectId}`);
+      return;
+    }
+    
     setProject(proj);
     if (proj.chapters.length > 0) {
       setSelectedChapter(proj.chapters[proj.chapters.length - 1]);
