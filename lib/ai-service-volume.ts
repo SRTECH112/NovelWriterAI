@@ -31,6 +31,16 @@ export async function generateChapterWithVolumeContext(
     characterFocus?: string[];
     pacingHint?: string;
     rawOutlineText?: string;
+  },
+  structureContext?: {
+    currentActNumber: number;
+    totalActsInVolume: number;
+    currentVolumeNumber: number;
+    totalVolumes: number;
+    totalChaptersInAct: number;
+    isLastChapter: boolean;
+    isLastAct: boolean;
+    isLastVolume: boolean;
   }
 ): Promise<{
   content: string;
@@ -56,10 +66,39 @@ export async function generateChapterWithVolumeContext(
 
   const systemPrompt = `You are a Novel Chapter Writer for SERIALIZED, MULTI-VOLUME storytelling.
 
-CRITICAL: You are writing within a VOLUME/ACT structure. This chapter is part of:
-- Volume ${volume.volumeNumber}: "${volume.title}"
-- Act ${act.actNumber} (${act.narrativePurpose})
+⚠️ CRITICAL STRUCTURE AWARENESS ⚠️
+You are writing:
+- Volume ${structureContext?.currentVolumeNumber || volume.volumeNumber} of ${structureContext?.totalVolumes || '?'} total volumes
+- Act ${structureContext?.currentActNumber || act.actNumber} of ${structureContext?.totalActsInVolume || '?'} acts in this volume
 - Chapter ${chapterNumber} within this act (Global Chapter ${globalChapterNumber})
+- Volume: "${volume.title}"
+- Act Purpose: ${act.narrativePurpose}
+
+🚫 ANTI-EARLY-ENDING RULES (MANDATORY) 🚫
+${!structureContext?.isLastVolume || !structureContext?.isLastAct || !structureContext?.isLastChapter ? `
+THIS IS NOT THE FINAL CHAPTER. You are FORBIDDEN from:
+❌ Resolving the main conflict
+❌ Delivering emotional closure or payoff
+❌ Using "end-of-story" language ("and that was the day...", "little did I know...", "this changed everything forever")
+❌ Writing reflective, final-sounding conclusions
+❌ Tying up major story threads
+❌ Giving characters their "happily ever after"
+
+INSTEAD, you MUST:
+✅ End on forward momentum
+✅ Leave unanswered tension
+✅ Create anticipation for the next chapter
+✅ Build pressure, don't release it
+✅ Treat this as ONE STEP in a long journey
+✅ Think: Wattpad multi-volume series, anime light novel pacing
+` : `
+THIS IS THE FINAL CHAPTER OF THE FINAL VOLUME.
+You MAY deliver:
+✅ Major resolutions
+✅ Emotional payoff
+✅ Satisfying closure
+✅ "This was the end" tone
+`}
 
 VOLUME/ACT AWARENESS RULES:
 1. Respect the VOLUME THEME: ${volume.theme || 'Not specified'}
@@ -69,17 +108,19 @@ VOLUME/ACT AWARENESS RULES:
 5. Character Development Focus: ${act.characterDevelopmentFocus || 'General progression'}
 
 PACING GUIDELINES BY ACT PURPOSE:
-- "setup": Introduce dynamics, establish baseline, subtle foreshadowing
-- "rising-tension": Build misunderstandings, proximity events, emotional awareness
-- "fracture": Confrontation, revelation, relationship strain
-- "crisis": Peak emotional conflict, hard choices, vulnerability
-- "resolution": Reconciliation, clarity, emotional payoff
-- "payoff": Deliver on volume promises, satisfying closure
+- "setup": Introduce dynamics, establish baseline, subtle foreshadowing (NO RESOLUTION)
+- "rising-tension": Build misunderstandings, proximity events, emotional awareness (ACCUMULATE TENSION)
+- "fracture": Confrontation, revelation, relationship strain (BREAK, DON'T FIX)
+- "crisis": Peak emotional conflict, hard choices, vulnerability (PRESSURE, NOT RELEASE)
+- "resolution": Reconciliation, clarity, emotional payoff (ONLY IF FINAL ACT OF FINAL VOLUME)
+- "payoff": Deliver on volume promises, satisfying closure (ONLY IF FINAL ACT OF FINAL VOLUME)
 
-EMOTIONAL ESCALATION:
-- Early Acts (1-2): Quiet, character-driven, subtle tension
-- Mid Acts (3-4): Increased proximity, misunderstandings, awareness
-- Late Acts (5+): Confrontation, revelation, emotional climax
+LONG-STORY AWARENESS:
+- Early/Mid chapters are ACCUMULATIVE, not conclusive
+- Layer character, tension, and relationships
+- Think: Wattpad long-running series, anime light novel arcs
+- Stories are journeys, not summaries
+- Chapters build pressure, they do not release it early
 
 OPENING SCENE MANDATE (anime/Wattpad style):
 - Start inside an ordinary moment already in progress
@@ -98,9 +139,31 @@ PROSE QUALITY:
 - Natural dialogue
 - Avoid clichés and purple prose
 
+⚠️ CHAPTER LENGTH REQUIREMENTS (MANDATORY) ⚠️
+MINIMUM: 1,500 words
+TARGET: 1,500–2,000 words
+MAXIMUM: 2,500 words (only if scene demands it)
+
+YOU MUST CONTINUE WRITING UNTIL:
+✅ All outline beats are meaningfully covered (not summarized)
+✅ A natural narrative beat is reached
+✅ Word count is at least 1,500 words
+
+FORBIDDEN:
+❌ Ending early due to token limits
+❌ Summary-style pacing (e.g., "Later that day...", "After some time...")
+❌ Rushing through scenes
+❌ Skipping beats
+
+REQUIRED CHAPTER STRUCTURE:
+- Multiple scenes OR one sustained long scene
+- Include: atmosphere, internal monologue, character interaction
+- Fully realize each outline beat with dialogue, action, and emotion
+- Show, don't tell
+
 OUTPUT FORMAT (JSON):
 {
-  "content": "Full chapter text (2000-4000 words). Escape all quotes and newlines properly.",
+  "content": "Full chapter text (1500-2000 words MINIMUM). Escape all quotes and newlines properly.",
   "summary": "Brief summary of what happened",
   "stateDelta": {
     "characterStates": {"Character Name": "Current state/location/condition"},
@@ -129,19 +192,19 @@ CHARACTER FOCUS (MUST FEATURE):
 ${outlineMetadata.characterFocus?.join(', ') || 'Not specified'}
 
 PACING REQUIREMENT:
-${outlineMetadata.pacingHint || act.pacing} (slow = 1500-2000 words with emotional depth, medium = 2000-3000 words balanced, fast = 2500-4000 words action-driven)
+${outlineMetadata.pacingHint || act.pacing}
 
-EXPANSION RULES:
-- EXPAND each beat into full scenes (1500-2000 words per chapter)
-- Add dialogue, internal monologue, sensory details
-- Show emotional reactions and character dynamics
-- Build atmosphere and tension
+BEAT EXPANSION RULES:
+- EXPAND each beat into full scenes with dialogue, action, and internal monologue
+- Each beat should take 300-500 words to fully realize
+- Add sensory details, atmosphere, and emotional reactions
+- Show character dynamics through interaction
 - DO NOT skip or summarize any beats
 - DO NOT add beats not in the outline
 - DO NOT rush through scenes
 - Anime/Wattpad pacing: slow emotional buildup, internal thoughts, scene continuity
 
-TARGET LENGTH: 1500-2000 words (strict)
+TOTAL CHAPTER LENGTH: 1,500-2,000 words (strict minimum)
 ` : '';
 
   const userPrompt = `${globalContext}

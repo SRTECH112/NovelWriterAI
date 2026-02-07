@@ -75,6 +75,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Calculate structure context for anti-early-ending rules
+    const totalVolumesResult = await sql`
+      SELECT COUNT(DISTINCT volume_number) as count FROM volumes WHERE book_id = ${bookId}
+    `;
+    const totalVolumes = totalVolumesResult[0]?.count || 1;
+
+    const totalActsResult = await sql`
+      SELECT COUNT(*) as count FROM acts WHERE volume_id = ${volumeId}
+    `;
+    const totalActsInVolume = totalActsResult[0]?.count || 1;
+
+    const totalChaptersResult = await sql`
+      SELECT COUNT(*) as count FROM chapters WHERE act_id = ${actId}
+    `;
+    const totalChaptersInAct = totalChaptersResult[0]?.count || act.targetChapterCount || 5;
+
+    const structureContext = {
+      currentActNumber: act.actNumber,
+      totalActsInVolume,
+      currentVolumeNumber: volume.volumeNumber,
+      totalVolumes,
+      totalChaptersInAct,
+      isLastChapter: chapterNumber >= totalChaptersInAct,
+      isLastAct: act.actNumber >= totalActsInVolume,
+      isLastVolume: volume.volumeNumber >= totalVolumes,
+    };
+
+    console.log('📊 Structure context:', structureContext);
+
     // Generate chapter with full volume/act context
     const result = await generateChapterWithVolumeContext(
       storyBible,
@@ -90,7 +119,8 @@ export async function POST(request: NextRequest) {
         relationshipShift,
         sceneGoal,
       },
-      outlineMetadata
+      outlineMetadata,
+      structureContext
     );
 
     const canonCheck = await checkCanonCompliance(result.content, storyBible);
