@@ -52,6 +52,11 @@ export async function POST(request: NextRequest) {
     let globalChapterNumber = 1;
 
     for (const actData of parsedStructure.acts) {
+      // Truncate long values to fit database constraints
+      const title = (actData.title || `Act ${actData.actNumber}`).slice(0, 100);
+      const narrativePurpose = (actData.narrativePurpose || '').slice(0, 500);
+      const pacing = (actData.pacing || 'medium').slice(0, 50);
+      
       // Create Act
       const actResult = await sql`
         INSERT INTO acts (
@@ -59,8 +64,8 @@ export async function POST(request: NextRequest) {
           emotional_pressure, pacing, target_chapter_count
         )
         VALUES (
-          ${volumeId}, ${actData.actNumber}, ${actData.title || `Act ${actData.actNumber}`},
-          ${actData.narrativePurpose}, ${actData.emotionalPressure}, ${actData.pacing},
+          ${volumeId}, ${actData.actNumber}, ${title},
+          ${narrativePurpose}, ${actData.emotionalPressure}, ${pacing},
           ${actData.targetChapterCount}
         )
         ON CONFLICT (volume_id, act_number)
@@ -77,6 +82,12 @@ export async function POST(request: NextRequest) {
 
       // Create Chapter placeholders with outline metadata
       for (const chapterData of actData.chapters) {
+        // Truncate long values to fit database constraints
+        const chapterTitle = (chapterData.title || `Chapter ${chapterData.chapterNumber}`).slice(0, 200);
+        const chapterSummary = (chapterData.summary || '').slice(0, 1000);
+        const emotionalIntent = (chapterData.emotionalIntent || '').slice(0, 500);
+        const sceneGoal = (chapterData.plotBeats?.join('; ') || '').slice(0, 1000);
+        
         await sql`
           INSERT INTO chapters (
             book_id, volume_id, act_id, chapter_number, global_chapter_number,
@@ -88,10 +99,10 @@ export async function POST(request: NextRequest) {
           )
           VALUES (
             ${bookId}, ${volumeId}, ${actId}, ${chapterData.chapterNumber}, ${globalChapterNumber},
-            ${chapterData.title}, ${chapterData.summary},
+            ${chapterTitle}, ${chapterSummary},
             ${`[OUTLINE PLACEHOLDER]\n\nOriginal Outline:\n${chapterData.rawOutlineText}\n\nPlot Beats:\n${chapterData.plotBeats.join('\n- ')}\n\nEmotional Intent: ${chapterData.emotionalIntent}\nCharacter Focus: ${chapterData.characterFocus.join(', ')}\nPacing: ${chapterData.pacingHint}`},
             0,
-            ${chapterData.emotionalIntent}, ${chapterData.plotBeats.join('; ')},
+            ${emotionalIntent}, ${sceneGoal},
             ${JSON.stringify({ outlineMetadata: chapterData })},
             ${JSON.stringify([])},
             ${JSON.stringify(chapterData.plotBeats)},
