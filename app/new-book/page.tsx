@@ -78,24 +78,63 @@ export default function NewBookPage() {
     }
   };
 
-  const handleApproveBible = () => {
+  const handleApproveBible = async () => {
     if (!generatedBible) return;
     
-    const project = ProjectStore.createProject({
-      title,
-      genre,
-      pov,
-      tone,
-      targetWordCount,
-      status: 'draft',
-    });
+    setLoading(true);
+    setError('');
 
-    // Story Bible is automatically locked (immutable) once approved
-    const lockedBible = { ...generatedBible, locked: true };
-    const bible = ProjectStore.saveStoryBible(lockedBible);
-    ProjectStore.updateProject(project.id, { storyBibleId: bible.id });
-    setProjectId(project.id);
-    setCurrentStep('outline');
+    try {
+      // Create book in database
+      const bookRes = await fetch('/api/books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          genre,
+          pov,
+          tone,
+          targetWordCount,
+          status: 'draft',
+        }),
+      });
+
+      if (!bookRes.ok) {
+        const data = await bookRes.json();
+        throw new Error(data.error || 'Failed to create book');
+      }
+
+      const bookData = await bookRes.json();
+      const bookId = bookData.book.id;
+
+      // Save Story Bible to database
+      const bibleRes = await fetch(`/api/books/${bookId}/bible`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyBible: {
+            raw_whitepaper: whitepaper,
+            structured_sections: generatedBible.structured_sections,
+            metadata: generatedBible.metadata,
+            locked: true,
+          },
+        }),
+      });
+
+      if (!bibleRes.ok) {
+        const data = await bibleRes.json();
+        throw new Error(data.error || 'Failed to save Story Bible');
+      }
+
+      setProjectId(bookId.toString());
+      
+      // Redirect to editor-v2
+      router.push(`/editor-v2/${bookId}`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGenerateOutline = async () => {
