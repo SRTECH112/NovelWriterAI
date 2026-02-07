@@ -202,65 +202,89 @@ export async function parseStoryOutline(
     }>;
   }>;
 }> {
-  const systemPrompt = `You are a Story Structure Parser. Convert user-written outlines into structured Acts and Chapters.
+  const systemPrompt = `You are a Story Structure Architect. Your job is to create a complete Volume/Act/Chapter structure for a novel.
 
-RULES:
-1. Detect act boundaries (setup, rising action, climax, resolution)
-2. Extract chapter summaries and beats
-3. Identify emotional intent and character focus
-4. Preserve original outline text for each chapter
-5. Assign pacing hints (slow/medium/fast)
+CRITICAL RULES:
+1. ALWAYS generate a complete structure, even if the outline is minimal
+2. Use Story Bible worldRules, themes, and constraints as context
+3. Follow Wattpad/web novel pacing: 1500-2000 words per chapter
+4. Acts must follow natural narrative progression (Setup → Disruption → Escalation → Fallout → Resolution)
+5. Each act should have 5-15 chapters
+6. Total target: 30-50 chapters for a full novel
+7. Derive act titles and purposes from the story concept, NOT generic templates
 
-OUTPUT: JSON with acts array, each containing chapters array.`;
+OUTPUT: Complete JSON structure with acts and chapters.`;
 
-  const prompt = `Parse this story outline into structured Acts and Chapters.
+  const whitepaper = storyBible.raw_whitepaper || '';
+  const sections = storyBible.structured_sections;
+  
+  const prompt = `Create a complete novel structure from this Story Bible and outline.
 
-STORY BIBLE CONTEXT:
+STORY BIBLE SUMMARY:
 Genre: ${storyBible.metadata.genre || 'Not specified'}
 Tone: ${storyBible.metadata.tone || 'Not specified'}
 POV: ${storyBible.metadata.pov || 'Not specified'}
+Themes: ${sections.themesTone?.join(', ') || 'Not specified'}
+World Rules: ${sections.worldRules?.slice(0, 3).join('; ') || 'Not specified'}
 
-RAW OUTLINE:
-${rawOutline}
+WHITEPAPER EXCERPT:
+${whitepaper.slice(0, 1000)}
+
+${rawOutline ? `USER OUTLINE:\n${rawOutline}\n` : 'NO EXPLICIT OUTLINE PROVIDED - Generate structure from Story Bible context.'}
 
 INSTRUCTIONS:
+${rawOutline 
+  ? `- Parse the user's outline and expand it into acts and chapters
 - Detect act boundaries (if not explicit, infer from narrative flow)
-- Each act should have 3-15 chapters
-- Extract plot beats from each chapter description
-- Identify emotional intent (e.g., "tension building", "romantic moment", "revelation")
-- List character focus for each chapter
-- Assign pacing: "slow" (character moments), "medium" (balanced), "fast" (action/revelation)
-- Preserve the original outline text for each chapter
+- Preserve user's chapter descriptions as rawOutlineText`
+  : `- Generate a complete story structure based on the Story Bible
+- Create 4-6 acts following natural story progression
+- Each act should have 5-12 chapters
+- Infer plot progression from worldRules, themes, and genre`}
+
+CRITICAL REQUIREMENTS:
+- Each act MUST have a unique title derived from the story (NOT "Act 1", "Act 2")
+- narrativePurpose should describe what happens in this act (e.g., "Kate discovers Marvin's identity", "Love triangle intensifies")
+- emotionalPressure: 1-10 scale (1=calm, 5=moderate tension, 10=crisis)
+- pacing: "slow" (character-driven), "medium" (balanced), "fast" (action/revelation)
+- targetChapterCount: how many chapters this act should have
+- Each chapter needs: title, summary, plotBeats (3-5 beats), emotionalIntent, characterFocus, pacingHint
+
+WATTPAD PACING RULES:
+- Chapters are 1500-2000 words
+- Slow emotional buildup, not rushed
+- Each chapter = 1-2 scenes max
+- End on hooks or emotional beats
 
 OUTPUT FORMAT (strict JSON):
 {
   "acts": [
     {
       "actNumber": 1,
-      "title": "Setup",
-      "narrativePurpose": "Establish world and characters",
+      "title": "The New Transfer Student",
+      "narrativePurpose": "Kate meets Marvin and discovers his secret",
       "emotionalPressure": 3,
-      "pacing": "medium",
-      "targetChapterCount": 5,
+      "pacing": "slow",
+      "targetChapterCount": 8,
       "chapters": [
         {
           "chapterNumber": 1,
-          "title": "First Day",
-          "summary": "Kate arrives at school and meets Marvin",
-          "plotBeats": ["Kate enters school", "Notices Marvin", "First interaction"],
-          "emotionalIntent": "Curiosity and attraction",
+          "title": "First Day at Mabini Colleges",
+          "summary": "Kate arrives at her elite high school and notices the mysterious new student",
+          "plotBeats": ["Kate enters school", "Notices unusual security", "First glimpse of Marvin", "Overhears whispers about him"],
+          "emotionalIntent": "Curiosity and intrigue",
           "characterFocus": ["Kate", "Marvin"],
           "pacingHint": "slow",
-          "rawOutlineText": "Ch 1: Kate's first day, meets Marvin"
+          "rawOutlineText": "${rawOutline ? 'Ch 1: Kate\'s first day, meets Marvin' : 'Generated from Story Bible'}"
         }
       ]
     }
   ]
 }`;
 
-  console.log('🔵 Parsing story outline with AI');
+  console.log('🔵 Auto-generating story structure with AI');
   const response = await callAI(prompt, systemPrompt);
-  console.log('🔵 AI outline parse response length:', response.length);
+  console.log('🔵 AI structure generation response length:', response.length);
 
   // Extract JSON
   let cleanedResponse = response
@@ -271,17 +295,18 @@ OUTPUT FORMAT (strict JSON):
 
   const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    console.error('❌ No JSON found in outline parse response');
-    throw new Error('Failed to parse outline: No valid JSON returned');
+    console.error('❌ No JSON found in structure generation response');
+    throw new Error('Failed to generate structure: No valid JSON returned');
   }
 
   try {
     const parsed = JSON.parse(jsonMatch[0]);
-    console.log('✅ Successfully parsed outline into', parsed.acts?.length || 0, 'acts');
+    console.log('✅ Successfully generated structure:', parsed.acts?.length || 0, 'acts,', 
+      parsed.acts?.reduce((sum: number, act: any) => sum + (act.chapters?.length || 0), 0) || 0, 'chapters');
     return parsed;
   } catch (parseError: any) {
     console.error('❌ JSON parse error:', parseError.message);
-    throw new Error('Failed to parse outline: Invalid JSON structure');
+    throw new Error('Failed to generate structure: Invalid JSON structure');
   }
 }
 

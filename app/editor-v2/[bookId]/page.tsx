@@ -62,67 +62,19 @@ export default function EditorV2Page() {
         setStoryBible(bibleData.storyBible);
       }
 
-      // Load Volumes
+      // Load Volumes (should already exist from auto-generation)
       const volumesRes = await fetch(`/api/books/${bookId}/volumes`);
       if (volumesRes.ok) {
         const volumesData = await volumesRes.json();
-        
-        // If no volumes exist, create initial volume and act
-        if (volumesData.volumes.length === 0) {
-          await createInitialStructure();
+        setVolumes(volumesData.volumes);
+        if (volumesData.volumes.length > 0) {
+          setCurrentVolumeId(volumesData.volumes[0].id);
         } else {
-          setVolumes(volumesData.volumes);
-          if (volumesData.volumes.length > 0) {
-            setCurrentVolumeId(volumesData.volumes[0].id);
-          }
+          setError('No volumes found. Story structure may not have been generated properly.');
         }
       }
     } catch (err: any) {
       setError(err.message);
-    }
-  };
-
-  const createInitialStructure = async () => {
-    try {
-      // Create Volume 1
-      const volumeRes = await fetch(`/api/books/${bookId}/volumes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          volumeNumber: 1,
-          title: 'Volume 1',
-          description: 'First volume',
-          targetChapters: 40,
-        }),
-      });
-
-      if (!volumeRes.ok) throw new Error('Failed to create initial volume');
-
-      const volumeData = await volumeRes.json();
-      const newVolume = volumeData.volume;
-      setVolumes([newVolume]);
-      setCurrentVolumeId(newVolume.id);
-
-      // Create Act 1
-      const actRes = await fetch(`/api/books/${bookId}/volumes/${newVolume.id}/acts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          actNumber: 1,
-          narrativePurpose: 'Setup',
-          emotionalPressure: 'Building tension',
-          pacing: 'Moderate',
-          targetChapters: 15,
-        }),
-      });
-
-      if (!actRes.ok) throw new Error('Failed to create initial act');
-
-      const actData = await actRes.json();
-      setActs([actData.act]);
-      setCurrentActId(actData.act.id);
-    } catch (err: any) {
-      setError('Failed to create initial structure: ' + err.message);
     }
   };
 
@@ -345,9 +297,10 @@ export default function EditorV2Page() {
               onClick={() => setShowCreateAct(true)}
               disabled={!currentVolumeId}
               className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              title="Add additional act (structure is auto-generated)"
             >
               <Plus className="h-4 w-4" />
-              New Act
+              Add Act
             </button>
           </div>
         </div>

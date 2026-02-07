@@ -130,31 +130,28 @@ export default function NewBookPage() {
 
       setProjectId(bookId.toString());
 
-      // Parse story outline if provided
-      if (storyOutline.trim()) {
-        console.log('📝 Parsing story outline...');
-        const outlineRes = await fetch('/api/parse-outline', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookId,
-            rawOutline: storyOutline,
-          }),
-        });
+      // ALWAYS auto-generate structure (with or without user outline)
+      console.log('🤖 Auto-generating story structure from Story Bible...');
+      const outlineRes = await fetch('/api/parse-outline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookId,
+          rawOutline: storyOutline.trim() || '', // Empty string if no outline provided
+        }),
+      });
 
-        if (!outlineRes.ok) {
-          const data = await outlineRes.json();
-          console.error('Outline parse error:', data);
-          // Don't fail the whole flow, just warn
-          setError(`Warning: ${data.error || 'Failed to parse outline'}. You can add chapters manually.`);
-        } else {
-          const outlineData = await outlineRes.json();
-          console.log('✅ Outline parsed:', outlineData);
-          setParsedOutline(outlineData);
-        }
+      if (!outlineRes.ok) {
+        const data = await outlineRes.json();
+        console.error('Structure generation error:', data);
+        throw new Error(data.error || 'Failed to generate story structure');
       }
+
+      const outlineData = await outlineRes.json();
+      console.log('✅ Story structure generated:', outlineData);
+      setParsedOutline(outlineData);
       
-      // Redirect to editor-v2
+      // Redirect to editor-v2 with complete structure
       router.push(`/editor-v2/${bookId}`);
     } catch (err: any) {
       setError(err.message);

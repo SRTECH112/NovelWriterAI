@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { bookId, rawOutline } = body;
 
-    if (!bookId || !rawOutline) {
+    if (!bookId) {
       return NextResponse.json(
-        { error: 'bookId and rawOutline are required' },
+        { error: 'bookId is required' },
         { status: 400 }
       );
     }
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse outline with AI
-    const parsedStructure = await parseStoryOutline(rawOutline, storyBible);
+    // Auto-generate structure with AI (works with or without user outline)
+    const parsedStructure = await parseStoryOutline(rawOutline || '', storyBible);
 
     // Create Volume 1 if it doesn't exist
     let volumeResult = await sql`
