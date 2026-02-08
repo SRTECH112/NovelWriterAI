@@ -120,7 +120,8 @@ export async function POST(request: NextRequest) {
         sceneGoal,
       },
       outlineMetadata,
-      structureContext
+      structureContext,
+      volume.outline // Pass volume outline for strict enforcement
     );
 
     // Validate word count meets minimum requirement

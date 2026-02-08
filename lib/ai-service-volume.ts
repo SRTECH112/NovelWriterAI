@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { StoryBible, Chapter, Volume, Act, VolumeMemory, ActMemory } from '@/lib/types';
+import { formatProse } from '@/lib/format-prose';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -41,7 +42,8 @@ export async function generateChapterWithVolumeContext(
     isLastChapter: boolean;
     isLastAct: boolean;
     isLastVolume: boolean;
-  }
+  },
+  volumeOutline?: string // User-defined volume/chapter outline (BINDING)
 ): Promise<{
   content: string;
   summary: string;
@@ -73,6 +75,30 @@ You are writing:
 - Chapter ${chapterNumber} within this act (Global Chapter ${globalChapterNumber})
 - Volume: "${volume.title}"
 - Act Purpose: ${act.narrativePurpose}
+
+${volumeOutline ? `
+🚨 STRICT VOLUME OUTLINE ENFORCEMENT (BINDING) 🚨
+The user has provided a VOLUME OUTLINE that is MANDATORY and BINDING.
+
+VOLUME OUTLINE:
+${volumeOutline}
+
+YOU ARE ABSOLUTELY FORBIDDEN FROM:
+❌ Skipping any outline beats
+❌ Inventing events outside the provided outline
+❌ Advancing plot elements meant for later volumes
+❌ Deviating from the user's defined structure
+❌ Adding your own creative plot points not in the outline
+
+YOU MUST:
+✅ Read the whitepaper, story bible, AND volume outline
+✅ Only cover what is outlined for THIS chapter
+✅ Follow the outline beats in exact order
+✅ Expand outline beats into full scenes (do not summarize)
+✅ Stay within the boundaries of this volume's scope
+
+If the outline says "Chapter ${chapterNumber}: [specific beats]", you MUST cover those beats and ONLY those beats.
+` : ''}
 
 🚫 ANTI-EARLY-ENDING RULES (MANDATORY) 🚫
 ${!structureContext?.isLastVolume || !structureContext?.isLastAct || !structureContext?.isLastChapter ? `
@@ -138,6 +164,29 @@ PROSE QUALITY:
 - Sensory details
 - Natural dialogue
 - Avoid clichés and purple prose
+
+⚠️ PARAGRAPH FORMATTING RULES (MANDATORY) ⚠️
+CRITICAL: Follow these formatting rules strictly:
+✅ Blank line between EVERY paragraph (use \n\n)
+✅ Dialogue ALWAYS starts a new paragraph
+✅ NO paragraph longer than 4-5 sentences
+✅ Break up long paragraphs into smaller ones
+✅ Each dialogue exchange gets its own paragraph
+
+FORBIDDEN:
+❌ Wall-of-text paragraphs
+❌ Multiple dialogue exchanges in one paragraph
+❌ Paragraphs with 6+ sentences
+❌ No spacing between paragraphs
+
+FORMAT EXAMPLE:
+She walked into the room, her heart pounding. The air felt thick with tension.
+
+"What are you doing here?" Adrian asked, his voice cold.
+
+"I needed to see you," she replied, stepping closer.
+
+He turned away, unable to meet her eyes. The silence stretched between them like a chasm.
 
 ⚠️ CHAPTER LENGTH REQUIREMENTS (MANDATORY) ⚠️
 MINIMUM: 600 words (STRICT - do not stop before this)
@@ -260,6 +309,9 @@ Write the chapter now as valid JSON.`;
     throw new Error('Invalid JSON response from AI');
   }
 
+  // Apply automatic paragraph formatting
+  const formattedContent = formatProse(result.content);
+  
   const proseValidation = {
     score: 85,
     issues: [],
@@ -267,7 +319,7 @@ Write the chapter now as valid JSON.`;
   };
 
   return {
-    content: result.content,
+    content: formattedContent,
     summary: result.summary,
     stateDelta: result.stateDelta,
     proseValidation,

@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS volumes (
   relationship_state_start TEXT,
   relationship_state_end TEXT,
   major_turning_point TEXT,
+  outline TEXT, -- User-defined volume and chapter-by-chapter outline (binding for generation)
   target_chapter_count INTEGER DEFAULT 20,
   status VARCHAR(50) DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

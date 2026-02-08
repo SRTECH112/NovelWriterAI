@@ -41,6 +41,7 @@ export interface Volume {
   relationshipStateStart?: string;
   relationshipStateEnd?: string;
   majorTurningPoint?: string;
+  outline?: string; // User-defined volume and chapter-by-chapter outline (binding for generation)
   targetChapterCount: number;
   status: 'draft' | 'in-progress' | 'completed';
   createdAt: string;
