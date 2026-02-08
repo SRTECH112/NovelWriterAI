@@ -9,23 +9,22 @@ const openai = new OpenAI({
 /**
  * Generate a single page (600-900 words, 1-2 micro-beats only)
  * CRITICAL: Pages are the ONLY writable unit. Never generate full chapters.
+ * Structure: Volume → Chapter → Page (no Acts)
  */
 export async function generatePage(
   storyBible: StoryBible,
   volume: Volume,
-  act: Act,
   chapter: Chapter,
   pageNumber: number,
   previousPages: Page[],
   chapterOutline?: string,
   volumeOutline?: string,
   structureContext?: {
-    currentActNumber: number;
-    totalActsInVolume: number;
     currentVolumeNumber: number;
     totalVolumes: number;
+    currentChapterNumber: number;
+    totalChaptersInVolume: number;
     isLastChapter: boolean;
-    isLastAct: boolean;
     isLastVolume: boolean;
   }
 ): Promise<{
@@ -61,10 +60,11 @@ export async function generatePage(
 
 ⚠️ STRUCTURE AWARENESS ⚠️
 - Volume ${structureContext?.currentVolumeNumber || volume.volumeNumber} of ${structureContext?.totalVolumes || '?'} total volumes
-- Act ${structureContext?.currentActNumber || act.actNumber} of ${structureContext?.totalActsInVolume || '?'} acts
-- Chapter ${chapter.chapterNumber}: "${chapter.title || 'Untitled'}"
+- Chapter ${structureContext?.currentChapterNumber || chapter.chapterNumber} of ${structureContext?.totalChaptersInVolume || '?'} chapters in this volume
+- Chapter Title: "${chapter.title || 'Untitled'}"
 - Page ${pageNumber} of ${totalPages} pages
 - Target chapter length: ${chapter.targetWordCount} words (${totalPages} pages × 700 words avg)
+${chapter.actTag ? `- Act Tag: ${chapter.actTag} (metadata only)` : ''}
 
 ${volumeOutline ? `
 🚨 VOLUME OUTLINE (BINDING) 🚨
@@ -178,7 +178,6 @@ Each page should cover 1-2 micro-beats:
 STORY BIBLE CONTEXT:
 World Rules: ${sections.worldRules?.slice(0, 3).join('; ') || 'Not specified'}
 Themes: ${sections.themesTone?.slice(0, 3).join(', ') || 'Not specified'}
-Characters: ${sections.characterProfiles?.map((c: any) => c.name).slice(0, 3).join(', ') || 'Not specified'}
 
 OUTPUT FORMAT (strict JSON):
 {

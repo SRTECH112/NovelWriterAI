@@ -81,40 +81,29 @@ export async function POST(request: NextRequest) {
     `;
     const volume = volumeResult[0] as Volume;
 
-    // Get act
-    const actResult = await sql`
-      SELECT * FROM acts WHERE id = ${chapter.act_id}
-    `;
-    const act = actResult[0] as Act;
-
-    // Calculate structure context
+    // Calculate structure context (no acts)
     const allVolumes = await sql`
       SELECT * FROM volumes WHERE book_id = ${chapter.book_id} ORDER BY volume_number
     `;
-    const actsInVolume = await sql`
-      SELECT * FROM acts WHERE volume_id = ${chapter.volume_id} ORDER BY act_number
-    `;
-    const chaptersInAct = await sql`
-      SELECT * FROM chapters WHERE act_id = ${chapter.act_id} ORDER BY chapter_number
+    const chaptersInVolume = await sql`
+      SELECT * FROM chapters WHERE volume_id = ${chapter.volume_id} ORDER BY chapter_order
     `;
 
     const structureContext = {
-      currentActNumber: act.act_number,
-      totalActsInVolume: actsInVolume.length,
-      currentVolumeNumber: volume.volume_number,
+      currentVolumeNumber: volume.volumeNumber,
       totalVolumes: allVolumes.length,
-      isLastChapter: chapter.chapter_number === chaptersInAct.length,
-      isLastAct: act.act_number === actsInVolume.length,
-      isLastVolume: volume.volume_number === allVolumes.length,
+      currentChapterNumber: chapter.chapter_number,
+      totalChaptersInVolume: chaptersInVolume.length,
+      isLastChapter: chapter.chapter_number === chaptersInVolume.length,
+      isLastVolume: volume.volumeNumber === allVolumes.length,
     };
 
     console.log(`🔵 Generating page ${pageNumber} of ${chapter.target_page_count} for chapter ${chapter.id}`);
 
-    // Generate page
+    // Generate page (no act needed - chapters are direct children of volumes)
     const result = await generatePage(
       storyBible,
       volume,
-      act,
       {
         ...chapter,
         targetWordCount: chapter.target_word_count,
