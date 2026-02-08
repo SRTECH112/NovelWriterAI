@@ -32,6 +32,7 @@ export default function EditorV2Page() {
   const [error, setError] = useState('');
   const [showCreateVolume, setShowCreateVolume] = useState(false);
   const [showCreateAct, setShowCreateAct] = useState(false);
+  const [volumeOutlineBuffer, setVolumeOutlineBuffer] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -156,6 +157,49 @@ export default function EditorV2Page() {
       setCurrentActId(data.act.id);
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const handleUpdateVolumeOutline = (volumeId: string, outline: string) => {
+    // Update local buffer
+    setVolumeOutlineBuffer(prev => ({ ...prev, [volumeId]: outline }));
+    
+    // Update volumes state optimistically
+    setVolumes(prev => prev.map(v => 
+      v.id === volumeId ? { ...v, outline } : v
+    ));
+  };
+
+  const handleSaveVolumeOutline = async (volumeId: string) => {
+    const outline = volumeOutlineBuffer[volumeId] || volumes.find(v => v.id === volumeId)?.outline || '';
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/volumes/${volumeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outline }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save volume outline');
+      }
+
+      // Clear buffer for this volume
+      setVolumeOutlineBuffer(prev => {
+        const newBuffer = { ...prev };
+        delete newBuffer[volumeId];
+        return newBuffer;
+      });
+
+      alert('Volume outline saved successfully!');
+    } catch (err: any) {
+      setError(err.message);
+      alert('Failed to save outline: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -460,6 +504,31 @@ export default function EditorV2Page() {
         <div className="w-96 border-l bg-card overflow-y-auto p-4 space-y-4">
           {currentVolume && currentAct ? (
             <>
+              {/* Volume Outline Input */}
+              <div className="border rounded-lg p-4 bg-background">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Volume Outline (Binding)
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Define chapter-by-chapter beats for this volume. AI will strictly follow this outline.
+                </p>
+                <textarea
+                  value={currentVolume.outline || ''}
+                  onChange={(e) => handleUpdateVolumeOutline(currentVolume.id, e.target.value)}
+                  placeholder={`Example:\nChapter 1: Kate meets Marvin at school\n- First glimpse in hallway\n- Overhears whispers about him\n- Feels curious\n\nChapter 2: Adrian confronts Kate\n- Jealousy surfaces\n- Tense conversation\n- Kate confused about feelings`}
+                  className="w-full h-64 p-3 text-sm border rounded-md resize-none font-mono"
+                  disabled={loading}
+                />
+                <button
+                  onClick={() => handleSaveVolumeOutline(currentVolume.id)}
+                  disabled={loading}
+                  className="mt-2 w-full px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50"
+                >
+                  Save Outline
+                </button>
+              </div>
+
               <VolumeActContext
                 volume={currentVolume}
                 act={currentAct}
