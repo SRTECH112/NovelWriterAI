@@ -94,13 +94,13 @@ CREATE TABLE IF NOT EXISTS acts (
   CONSTRAINT valid_pressure CHECK (emotional_pressure BETWEEN 1 AND 10)
 );
 
--- Chapters table (containers for pages, nested under acts)
+-- Chapters table (containers for pages, direct children of volumes)
 CREATE TABLE IF NOT EXISTS chapters (
   id SERIAL PRIMARY KEY,
   book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-  volume_id INTEGER REFERENCES volumes(id) ON DELETE CASCADE,
-  act_id INTEGER REFERENCES acts(id) ON DELETE CASCADE,
+  volume_id INTEGER NOT NULL REFERENCES volumes(id) ON DELETE CASCADE,
   chapter_number INTEGER NOT NULL,
+  chapter_order INTEGER NOT NULL, -- Order within volume (for sorting)
   global_chapter_number INTEGER,
   title VARCHAR(500),
   content TEXT DEFAULT '', -- Deprecated: use pages instead
@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS chapters (
   target_page_count INTEGER DEFAULT 4, -- Target: 3-5 pages
   current_page_count INTEGER DEFAULT 0, -- Actual pages generated
   outline TEXT, -- Chapter-level outline (broken into page beats)
+  act_tag VARCHAR(200), -- Optional: act as metadata/tag, not hierarchical parent
   emotional_beat TEXT,
   relationship_shift TEXT,
   scene_goal TEXT,
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS chapters (
   regeneration_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(act_id, chapter_number)
+  UNIQUE(volume_id, chapter_number)
 );
 
 -- Pages table (actual writable units, 600-900 words each)

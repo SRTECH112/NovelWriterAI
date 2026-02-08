@@ -88,9 +88,9 @@ export interface ActMemory {
 export interface Chapter {
   id: string;
   bookId: string;
-  volumeId?: string;
-  actId?: string;
+  volumeId: string; // Required: chapters are direct children of volumes
   chapterNumber: number;
+  chapterOrder: number; // Order within volume (for sorting)
   globalChapterNumber?: number;
   title?: string;
   content: string; // Deprecated: use pages instead
@@ -100,6 +100,7 @@ export interface Chapter {
   targetPageCount: number; // Target: 3-5 pages
   currentPageCount: number; // Actual pages generated
   outline?: string; // Chapter-level outline (broken into page beats)
+  actTag?: string; // Optional: act as metadata/tag, not hierarchical parent
   emotionalBeat?: string;
   relationshipShift?: string;
   sceneGoal?: string;
