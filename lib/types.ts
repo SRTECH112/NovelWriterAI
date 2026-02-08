@@ -88,29 +88,46 @@ export interface ActMemory {
 export interface Chapter {
   id: string;
   bookId: string;
-  volumeId: string;
-  actId: string;
+  volumeId?: string;
+  actId?: string;
   chapterNumber: number;
-  globalChapterNumber: number;
+  globalChapterNumber?: number;
   title?: string;
-  content: string;
+  content: string; // Deprecated: use pages instead
   summary?: string;
-  wordCount: number;
+  wordCount: number; // Calculated from pages
+  targetWordCount: number; // Target: 2,500-3,000 words
+  targetPageCount: number; // Target: 3-5 pages
+  currentPageCount: number; // Actual pages generated
+  outline?: string; // Chapter-level outline (broken into page beats)
   emotionalBeat?: string;
   relationshipShift?: string;
   sceneGoal?: string;
-  hookToNext?: string;
-  stateDelta: StateDelta;
-  canonWarnings: string[];
-  proseQuality?: {
-    score: number;
-    issues: string[];
-    warnings: string[];
-  };
+  characterStates?: Record<string, any>;
+  worldChanges?: any[];
+  plotProgression?: any[];
+  emotionalState?: string;
+  unresolvedThreads?: string[];
+  canonWarnings?: string[];
+  proseQualityScore?: number;
+  proseQualityIssues?: string[];
+  proseQualityWarnings?: string[];
+  regenerationCount?: number;
   createdAt: string;
   updatedAt: string;
-  lastGeneratedAt: string;
-  regenerationCount: number;
+}
+
+export interface Page {
+  id: string;
+  chapterId: string;
+  pageNumber: number;
+  content: string;
+  wordCount: number;
+  beatCoverage?: string; // Which micro-beats this page covers
+  narrativeMomentum?: string; // How this page ends (must have forward momentum)
+  locked: boolean; // Lock previous pages to prevent regeneration
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StateDelta {

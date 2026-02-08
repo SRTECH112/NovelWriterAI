@@ -94,37 +94,54 @@ CREATE TABLE IF NOT EXISTS acts (
   CONSTRAINT valid_pressure CHECK (emotional_pressure BETWEEN 1 AND 10)
 );
 
--- Chapters table (actual content, nested under acts)
+-- Chapters table (containers for pages, nested under acts)
 CREATE TABLE IF NOT EXISTS chapters (
   id SERIAL PRIMARY KEY,
   book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-  volume_id INTEGER NOT NULL REFERENCES volumes(id) ON DELETE CASCADE,
-  act_id INTEGER NOT NULL REFERENCES acts(id) ON DELETE CASCADE,
+  volume_id INTEGER REFERENCES volumes(id) ON DELETE CASCADE,
+  act_id INTEGER REFERENCES acts(id) ON DELETE CASCADE,
   chapter_number INTEGER NOT NULL,
-  global_chapter_number INTEGER NOT NULL,
+  global_chapter_number INTEGER,
   title VARCHAR(500),
-  content TEXT NOT NULL,
+  content TEXT DEFAULT '', -- Deprecated: use pages instead
   summary TEXT,
-  word_count INTEGER DEFAULT 0,
+  word_count INTEGER DEFAULT 0, -- Calculated from pages
+  target_word_count INTEGER DEFAULT 2750, -- Target: 2,500-3,000 words
+  target_page_count INTEGER DEFAULT 4, -- Target: 3-5 pages
+  current_page_count INTEGER DEFAULT 0, -- Actual pages generated
+  outline TEXT, -- Chapter-level outline (broken into page beats)
   emotional_beat TEXT,
   relationship_shift TEXT,
   scene_goal TEXT,
-  hook_to_next TEXT,
   character_states JSONB DEFAULT '{}',
   world_changes JSONB DEFAULT '[]',
   plot_progression JSONB DEFAULT '[]',
   emotional_state TEXT,
   unresolved_threads JSONB DEFAULT '[]',
   canon_warnings JSONB DEFAULT '[]',
-  prose_quality_score INTEGER,
+  prose_quality_score INTEGER DEFAULT 0,
   prose_quality_issues JSONB DEFAULT '[]',
   prose_quality_warnings JSONB DEFAULT '[]',
   regeneration_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(act_id, chapter_number),
-  UNIQUE(book_id, global_chapter_number)
+  UNIQUE(act_id, chapter_number)
+);
+
+-- Pages table (actual writable units, 600-900 words each)
+CREATE TABLE IF NOT EXISTS pages (
+  id SERIAL PRIMARY KEY,
+  chapter_id INTEGER NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+  page_number INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  word_count INTEGER NOT NULL,
+  beat_coverage TEXT, -- Which micro-beats this page covers
+  narrative_momentum TEXT, -- How this page ends (must have forward momentum)
+  locked BOOLEAN DEFAULT FALSE, -- Lock previous pages to prevent regeneration
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(chapter_id, page_number),
+  CONSTRAINT valid_word_count CHECK (word_count BETWEEN 600 AND 900)
 );
 
 -- Volume Memory table (long-term arc tracking)
