@@ -5,12 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ArrowLeft, Plus, Loader2, AlertTriangle, BookOpen, Zap } from 'lucide-react';
 import VolumeSelector from '@/components/VolumeSelector';
-import ActNavigator from '@/components/ActNavigator';
-import VolumeActChapterList from '@/components/VolumeActChapterList';
-import VolumeActContext from '@/components/VolumeActContext';
+import VolumeChapterPageList from '@/components/VolumeChapterPageList';
 import CreateVolumeModal from '@/components/CreateVolumeModal';
-import CreateActModal from '@/components/CreateActModal';
-import { Volume, Act, Chapter, StoryBible, VolumeMemory, ActMemory } from '@/lib/types';
+import { Volume, Chapter, Page, StoryBible, VolumeMemory } from '@/lib/types';
 
 export default function EditorV2Page() {
   const router = useRouter();
@@ -21,17 +18,15 @@ export default function EditorV2Page() {
   const [storyBible, setStoryBible] = useState<StoryBible | null>(null);
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [currentVolumeId, setCurrentVolumeId] = useState<string | null>(null);
-  const [acts, setActs] = useState<Act[]>([]);
-  const [currentActId, setCurrentActId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<Record<string, Chapter[]>>({});
+  const [pages, setPages] = useState<Record<string, Page[]>>({});
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
+  const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [volumeMemory, setVolumeMemory] = useState<VolumeMemory | null>(null);
-  const [actMemory, setActMemory] = useState<ActMemory | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCreateVolume, setShowCreateVolume] = useState(false);
-  const [showCreateAct, setShowCreateAct] = useState(false);
   const [volumeOutlineBuffer, setVolumeOutlineBuffer] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -49,10 +44,10 @@ export default function EditorV2Page() {
   }, [currentVolumeId]);
 
   useEffect(() => {
-    if (currentActId) {
-      loadAct(currentActId);
+    if (currentChapter) {
+      loadPages(currentChapter.id);
     }
-  }, [currentActId]);
+  }, [currentChapter?.id]);
 
   const loadBookData = async () => {
     try {
@@ -81,13 +76,13 @@ export default function EditorV2Page() {
 
   const loadVolume = async (volumeId: string) => {
     try {
-      // Load Acts
-      const actsRes = await fetch(`/api/books/${bookId}/volumes/${volumeId}/acts`);
-      if (actsRes.ok) {
-        const actsData = await actsRes.json();
-        setActs(actsData.acts);
-        if (actsData.acts.length > 0) {
-          setCurrentActId(actsData.acts[0].id);
+      // Load Chapters (direct children of volume, no acts)
+      const chaptersRes = await fetch(`/api/volumes/${volumeId}/chapters`);
+      if (chaptersRes.ok) {
+        const chaptersData = await chaptersRes.json();
+        setChapters(prev => ({ ...prev, [volumeId]: chaptersData.chapters }));
+        if (chaptersData.chapters.length > 0) {
+          setCurrentChapter(chaptersData.chapters[0]);
         }
       }
 
@@ -102,23 +97,18 @@ export default function EditorV2Page() {
     }
   };
 
-  const loadAct = async (actId: string) => {
+  const loadPages = async (chapterId: string) => {
     try {
-      // Load Chapters for this act
-      const chaptersRes = await fetch(`/api/books/${bookId}/acts/${actId}/chapters`);
-      if (chaptersRes.ok) {
-        const chaptersData = await chaptersRes.json();
-        setChapters(prev => ({ ...prev, [actId]: chaptersData.chapters }));
-      }
-
-      // Load Act Memory
-      const memoryRes = await fetch(`/api/books/${bookId}/acts/${actId}/memory`);
-      if (memoryRes.ok) {
-        const memoryData = await memoryRes.json();
-        setActMemory(memoryData.memory);
+      const pagesRes = await fetch(`/api/chapters/${chapterId}/pages`);
+      if (pagesRes.ok) {
+        const pagesData = await pagesRes.json();
+        setPages(prev => ({ ...prev, [chapterId]: pagesData.pages }));
+        if (pagesData.pages.length > 0) {
+          setCurrentPage(pagesData.pages[0]);
+        }
       }
     } catch (err: any) {
-      console.error('Error loading act:', err);
+      console.error('Error loading pages:', err);
     }
   };
 
@@ -140,23 +130,29 @@ export default function EditorV2Page() {
     }
   };
 
-  const handleCreateAct = async (actData: any) => {
-    if (!currentVolumeId) return;
-
+  const handleAddChapter = async (volumeId: string) => {
     try {
-      const res = await fetch(`/api/books/${bookId}/volumes/${currentVolumeId}/acts`, {
+      const res = await fetch(`/api/volumes/${volumeId}/chapters`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(actData),
+        body: JSON.stringify({
+          title: `Chapter ${(chapters[volumeId]?.length || 0) + 1}`,
+          targetWordCount: 2750,
+          targetPageCount: 4,
+        }),
       });
 
-      if (!res.ok) throw new Error('Failed to create act');
+      if (!res.ok) throw new Error('Failed to create chapter');
 
       const data = await res.json();
-      setActs([...acts, data.act]);
-      setCurrentActId(data.act.id);
+      setChapters(prev => ({
+        ...prev,
+        [volumeId]: [...(prev[volumeId] || []), data.chapter]
+      }));
+      setCurrentChapter(data.chapter);
     } catch (err: any) {
       setError(err.message);
+      alert('Failed to create chapter: ' + err.message);
     }
   };
 
@@ -203,164 +199,50 @@ export default function EditorV2Page() {
     }
   };
 
-  const handleGenerateChapterContent = async (chapter: Chapter) => {
-    if (!currentVolumeId || !chapter.actId) return;
-
-    // Check if chapter already has content
-    const hasContent = chapter.content && chapter.content.trim().length > 100 && !chapter.content.includes('[OUTLINE PLACEHOLDER]');
-    
-    if (hasContent) {
-      const confirmed = window.confirm(
-        'This chapter already has content. Do you want to regenerate it?\n\n' +
-        'Click OK to overwrite the existing content.\n' +
-        'Click Cancel to keep the current content.'
-      );
-      
-      if (!confirmed) return;
-    }
-
+  const handleGeneratePage = async (chapterId: string, pageNumber: number) => {
     setLoading(true);
     setError('');
 
     try {
-      const actChapters = chapters[chapter.actId] || [];
-      const previousChapters = actChapters.filter(c => c.chapterNumber < chapter.chapterNumber);
-
-      const res = await fetch('/api/generate-chapter-v2', {
+      const res = await fetch('/api/generate-page', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookId,
-          volumeId: currentVolumeId,
-          actId: chapter.actId,
-          chapterNumber: chapter.chapterNumber,
-          globalChapterNumber: chapter.globalChapterNumber,
-          previousChapters,
-        }),
+        body: JSON.stringify({ chapterId, pageNumber }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to generate chapter');
+        throw new Error(data.error || 'Failed to generate page');
       }
 
       const result = await res.json();
       
-      // Update chapters in state
-      setChapters(prev => ({
+      // Update pages in state
+      setPages(prev => ({
         ...prev,
-        [chapter.actId]: (prev[chapter.actId] || []).map(c => 
-          c.id === chapter.id ? result.chapter : c
-        ),
+        [chapterId]: [...(prev[chapterId] || []).filter(p => p.pageNumber !== pageNumber), result.page]
+          .sort((a, b) => a.pageNumber - b.pageNumber)
       }));
       
-      setCurrentChapter(result.chapter);
+      // Update chapter progress
+      if (currentChapter?.id === chapterId) {
+        setCurrentChapter(prev => prev ? {
+          ...prev,
+          currentPageCount: result.chapterProgress.currentPageCount,
+          wordCount: result.chapterProgress.totalWordCount,
+        } : null);
+      }
+      
+      setCurrentPage(result.page);
+      alert(`Page ${pageNumber} generated successfully! (${result.page.wordCount} words)`);
     } catch (err: any) {
       setError(err.message);
+      alert('Failed to generate page: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerateChapter = async (actId: string, chapterNumber: number) => {
-    if (!currentVolumeId || !storyBible) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const actChapters = chapters[actId] || [];
-      const globalChapterNumber = Object.values(chapters).flat().length + 1;
-
-      const res = await fetch('/api/generate-chapter-v2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookId,
-          volumeId: currentVolumeId,
-          actId,
-          chapterNumber,
-          globalChapterNumber,
-          previousChapters: actChapters,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to generate chapter');
-      }
-
-      const result = await res.json();
-      
-      // Update chapters
-      setChapters(prev => ({
-        ...prev,
-        [actId]: [...(prev[actId] || []), result.chapter],
-      }));
-      
-      setCurrentChapter(result.chapter);
-
-      // Auto-update memory
-      await updateMemoryAfterChapter(result.chapter);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateMemoryAfterChapter = async (chapter: Chapter) => {
-    // Auto-update act memory with new conflicts and emotional state
-    if (currentActId && chapter.stateDelta) {
-      const newConflicts = chapter.stateDelta.plotProgression || [];
-      const newTension = actMemory ? Math.min(actMemory.currentTensionLevel + 1, 10) : 5;
-
-      try {
-        await fetch(`/api/books/${bookId}/acts/${currentActId}/memory`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentTensionLevel: newTension,
-            emotionalDirection: chapter.stateDelta.emotionalState,
-            activeConflicts: [...(actMemory?.activeConflicts || []), ...newConflicts],
-            proximityEvents: actMemory?.proximityEvents || [],
-            misunderstandings: actMemory?.misunderstandings || [],
-          }),
-        });
-
-        // Reload act memory
-        if (currentActId) {
-          loadAct(currentActId);
-        }
-      } catch (err) {
-        console.error('Failed to update act memory:', err);
-      }
-    }
-
-    // Auto-update volume memory with unresolved threads
-    if (currentVolumeId && chapter.stateDelta?.unresolvedThreads) {
-      try {
-        await fetch(`/api/books/${bookId}/volumes/${currentVolumeId}/memory`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            unresolvedArcs: [...(volumeMemory?.unresolvedArcs || []), ...(chapter.stateDelta.unresolvedThreads || [])],
-            characterProgression: volumeMemory?.characterProgression || {},
-            thematicThreads: volumeMemory?.thematicThreads || [],
-            promisesMade: volumeMemory?.promisesMade || [],
-            promisesFulfilled: volumeMemory?.promisesFulfilled || [],
-          }),
-        });
-
-        // Reload volume memory
-        if (currentVolumeId) {
-          loadVolume(currentVolumeId);
-        }
-      } catch (err) {
-        console.error('Failed to update volume memory:', err);
-      }
-    }
-  };
 
   if (status === 'loading') {
     return (
@@ -371,7 +253,6 @@ export default function EditorV2Page() {
   }
 
   const currentVolume = volumes.find(v => v.id === currentVolumeId);
-  const currentAct = acts.find(a => a.id === currentActId);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -396,15 +277,12 @@ export default function EditorV2Page() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowCreateAct(true)}
-              disabled={!currentVolumeId}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              title="Add additional act (structure is auto-generated)"
-            >
-              <Plus className="h-4 w-4" />
-              Add Act
-            </button>
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating...
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -422,46 +300,55 @@ export default function EditorV2Page() {
 
       {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT SIDEBAR - Chapter List */}
-        <div className="w-80 border-r bg-card overflow-y-auto">
-          <VolumeActChapterList
+        {/* LEFT SIDEBAR - Volume → Chapter → Page List */}
+        <div className="w-80 border-r bg-card overflow-y-auto p-4">
+          <VolumeChapterPageList
             volumes={volumes}
-            acts={volumes.reduce((acc, vol) => {
-              acc[vol.id] = acts.filter(a => a.volumeId === vol.id);
-              return acc;
-            }, {} as Record<string, Act[]>)}
             chapters={chapters}
+            pages={pages}
             currentChapterId={currentChapter?.id || null}
+            currentPageId={currentPage?.id || null}
             onChapterSelect={setCurrentChapter}
-            onGenerateChapter={handleGenerateChapter}
+            onPageSelect={setCurrentPage}
+            onAddChapter={handleAddChapter}
+            onGeneratePage={handleGeneratePage}
           />
         </div>
 
-        {/* CENTER - Chapter Content */}
+        {/* CENTER - Page Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {currentChapter ? (
+          {currentPage ? (
             <div className="max-w-4xl mx-auto">
               <div className="mb-6 flex items-start justify-between">
                 <div>
                   <h1 className="text-2xl font-bold mb-2">
-                    Chapter {currentChapter.chapterNumber}
-                    {currentChapter.title && `: ${currentChapter.title}`}
+                    Chapter {currentChapter?.chapterNumber}: {currentChapter?.title || 'Untitled'}
                   </h1>
+                  <div className="text-lg font-semibold text-primary mb-2">
+                    Page {currentPage.pageNumber} of {currentChapter?.targetPageCount}
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{currentChapter.wordCount} words</span>
-                    {currentChapter.emotionalBeat && (
+                    <span>{currentPage.wordCount} words</span>
+                    <span>•</span>
+                    <span>Chapter: {currentChapter?.wordCount} / {currentChapter?.targetWordCount} words</span>
+                    {currentPage.locked && (
                       <>
                         <span>•</span>
-                        <span>{currentChapter.emotionalBeat}</span>
+                        <span className="text-yellow-600">🔒 Locked</span>
                       </>
                     )}
                   </div>
+                  {currentPage.beatCoverage && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <strong>Beats:</strong> {currentPage.beatCoverage}
+                    </div>
+                  )}
                 </div>
                 <button
-                  onClick={() => handleGenerateChapterContent(currentChapter)}
-                  disabled={loading}
+                  onClick={() => handleGeneratePage(currentChapter!.id, currentPage.pageNumber)}
+                  disabled={loading || currentPage.locked}
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Generate chapter content using AI"
+                  title={currentPage.locked ? "Page is locked" : "Regenerate this page"}
                 >
                   {loading ? (
                     <>
@@ -471,38 +358,51 @@ export default function EditorV2Page() {
                   ) : (
                     <>
                       <Zap className="h-4 w-4" />
-                      Generate Chapter
+                      Regenerate Page
                     </>
                   )}
                 </button>
               </div>
 
               <div className="prose prose-lg max-w-none">
-                {currentChapter.content.split('\n\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+                <div className="whitespace-pre-wrap">{currentPage.content}</div>
               </div>
 
-              {currentChapter.summary && (
+              {currentPage.narrativeMomentum && (
                 <div className="mt-8 p-4 bg-muted rounded-lg">
-                  <h3 className="font-semibold mb-2">Summary</h3>
-                  <p className="text-sm">{currentChapter.summary}</p>
+                  <h3 className="font-semibold mb-2">Narrative Momentum</h3>
+                  <p className="text-sm">{currentPage.narrativeMomentum}</p>
                 </div>
               )}
+            </div>
+          ) : currentChapter ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="mb-4">No pages generated yet for this chapter</p>
+                <button
+                  onClick={() => handleGeneratePage(currentChapter.id, 1)}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 mx-auto"
+                >
+                  <Zap className="h-4 w-4" />
+                  Generate Page 1
+                </button>
+              </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Select a chapter to view its content</p>
+                <p>Select a chapter to view its pages</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* RIGHT SIDEBAR - Context & Memory */}
+        {/* RIGHT SIDEBAR - Volume Outline & Chapter Outline */}
         <div className="w-96 border-l bg-card overflow-y-auto p-4 space-y-4">
-          {currentVolume && currentAct ? (
+          {currentVolume ? (
             <>
               {/* Volume Outline Input */}
               <div className="border rounded-lg p-4 bg-background">
@@ -529,23 +429,33 @@ export default function EditorV2Page() {
                 </button>
               </div>
 
-              <VolumeActContext
-                volume={currentVolume}
-                act={currentAct}
-                volumeMemory={volumeMemory || undefined}
-                actMemory={actMemory || undefined}
-              />
-
-              <ActNavigator
-                acts={acts}
-                currentActId={currentActId}
-                onActSelect={setCurrentActId}
-              />
+              {/* Chapter Progress */}
+              {currentChapter && (
+                <div className="border rounded-lg p-4 bg-background">
+                  <h3 className="font-semibold mb-2">Chapter Progress</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Pages:</span>
+                      <span className="font-mono">{currentChapter.currentPageCount} / {currentChapter.targetPageCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Words:</span>
+                      <span className="font-mono">{currentChapter.wordCount} / {currentChapter.targetWordCount}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${Math.round((currentChapter.currentPageCount / currentChapter.targetPageCount) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center text-muted-foreground py-8">
               <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">Create a volume and act to get started</p>
+              <p className="text-sm">Create a volume to get started</p>
             </div>
           )}
         </div>
@@ -557,13 +467,6 @@ export default function EditorV2Page() {
         onClose={() => setShowCreateVolume(false)}
         onSubmit={handleCreateVolume}
         nextVolumeNumber={volumes.length + 1}
-      />
-
-      <CreateActModal
-        isOpen={showCreateAct}
-        onClose={() => setShowCreateAct(false)}
-        onSubmit={handleCreateAct}
-        nextActNumber={acts.length + 1}
       />
     </div>
   );
