@@ -57,25 +57,27 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <BookOpen className="h-12 w-12 text-primary" />
+    <div className="min-h-screen premium-page-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="glass-card p-8 fade-in-up">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <BookOpen className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">Create Your Account</h1>
+            <p className="text-white/70">Start writing your novel with AI</p>
           </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
-          <CardDescription>Start writing your novel with AI</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-300">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white/90">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -83,22 +85,24 @@ export default function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="premium-input text-white placeholder:text-white/40"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username / Pen Name</Label>
+              <Label htmlFor="username" className="text-white/90">Username / Pen Name</Label>
               <Input
                 id="username"
                 type="text"
                 placeholder="Your pen name"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                className="premium-input text-white placeholder:text-white/40"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white/90">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -106,12 +110,13 @@ export default function SignUpPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="premium-input text-white placeholder:text-white/40"
               />
-              <p className="text-xs text-muted-foreground">At least 8 characters</p>
+              <p className="text-xs text-white/50">At least 8 characters</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-white/90">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -119,27 +124,28 @@ export default function SignUpPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="premium-input text-white placeholder:text-white/40"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full gradient-button text-white" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Create Account
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
+            <span className="text-white/60">Already have an account? </span>
             <Button
               variant="link"
-              className="p-0 h-auto font-normal"
+              className="p-0 h-auto font-normal text-purple-300 hover:text-purple-200"
               onClick={() => router.push('/auth/signin')}
             >
               Sign in
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
