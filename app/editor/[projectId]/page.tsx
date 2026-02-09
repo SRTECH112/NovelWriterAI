@@ -227,6 +227,11 @@ export default function EditorPage() {
         characterStates: selectedChapter.characterStates || {},
         worldChanges: selectedChapter.worldChanges || [],
         plotProgression: selectedChapter.plotProgression || [],
+        proseQuality: {
+          score: selectedChapter.proseQualityScore || 0,
+          issues: selectedChapter.proseQualityIssues || [],
+          warnings: selectedChapter.proseQualityWarnings || [],
+        },
       }
     : null;
 
