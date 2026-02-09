@@ -10,6 +10,10 @@ export async function GET(
     const user = await requireAuth();
     const { chapterId } = params;
 
+    console.log('📄 GET /api/chapters/[chapterId]/pages');
+    console.log('Chapter ID:', chapterId);
+    console.log('User ID:', user.id, 'Type:', typeof user.id);
+
     // Verify chapter belongs to user's book
     const chapterCheck = await sql`
       SELECT c.id, c.book_id, b.user_id 
@@ -18,19 +22,30 @@ export async function GET(
       WHERE c.id = ${chapterId}
     `;
 
+    console.log('Chapter check result:', chapterCheck);
+
     if (chapterCheck.length === 0) {
+      console.log('❌ Chapter not found');
       return NextResponse.json(
         { error: 'Chapter not found' },
         { status: 404 }
       );
     }
 
+    console.log('DB user_id:', chapterCheck[0].user_id, 'Type:', typeof chapterCheck[0].user_id);
+    console.log('Auth user.id:', user.id, 'Type:', typeof user.id);
+    console.log('String comparison:', String(chapterCheck[0].user_id), '===', String(user.id));
+    console.log('Match:', String(chapterCheck[0].user_id) === String(user.id));
+
     if (String(chapterCheck[0].user_id) !== String(user.id)) {
+      console.log('❌ Unauthorized - user mismatch');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
       );
     }
+
+    console.log('✅ Authorization passed');
 
     // Get pages for this chapter
     const pages = await sql`
