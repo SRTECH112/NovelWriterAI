@@ -224,9 +224,9 @@ export default function EditorPage() {
   const safeSelectedChapter = selectedChapter
     ? {
         ...selectedChapter,
-        stateDelta:
-          selectedChapter.stateDelta ||
-          { characterStates: {}, worldChanges: [], plotProgression: [] },
+        characterStates: selectedChapter.characterStates || {},
+        worldChanges: selectedChapter.worldChanges || [],
+        plotProgression: selectedChapter.plotProgression || [],
       }
     : null;
 
