@@ -263,7 +263,7 @@ export default function NewBookPage() {
   };
 
   return (
-    <div className="min-h-screen premium-page-bg text-white">
+    <div className="min-h-screen premium-page-bg text-white overflow-y-auto">
       <div className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => router.push('/dashboard')}>
@@ -273,7 +273,7 @@ export default function NewBookPage() {
         </div>
       </div>
       
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-4xl pb-20">
         <div className="mb-12 mt-8 text-center fade-in-up">
           <h1 className="text-5xl font-bold mb-3 gradient-text">Create New Book</h1>
           <p className="text-white/70 text-lg">Follow the steps to set up your AI-powered novel project</p>
