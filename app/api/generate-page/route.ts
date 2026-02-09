@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (chapterResult[0].user_id !== user.id) {
+    if (String(chapterResult[0].user_id) !== String(user.id)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
