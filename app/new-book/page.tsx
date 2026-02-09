@@ -66,15 +66,25 @@ export default function NewBookPage() {
     setError('');
 
     try {
+      // Build complete StoryCanonInput with ALL user inputs
+      const storyCanonInput = {
+        core_whitepaper: whitepaper,
+        characters_input: characters,
+        settings_input: settings,
+        story_outline: storyOutline,
+        metadata: {
+          title,
+          genre,
+          pov,
+          tone,
+          targetWordCount,
+        },
+      };
+
       const response = await fetch('/api/generate-bible', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          whitepaper,
-          characters,
-          settings,
-          metadata: { genre, tone, targetLength: targetWordCount, pov },
-        }),
+        body: JSON.stringify({ storyCanonInput }),
       });
 
       if (!response.ok) {
@@ -84,6 +94,12 @@ export default function NewBookPage() {
 
       const result = await response.json();
       console.log('Story Bible generated:', result);
+      
+      // Display validation warnings if any
+      if (result.validation?.warnings?.length > 0) {
+        console.warn('Story Bible validation warnings:', result.validation.warnings);
+      }
+      
       setGeneratedBible(result.storyBible);
     } catch (err: any) {
       setError(err.message);
