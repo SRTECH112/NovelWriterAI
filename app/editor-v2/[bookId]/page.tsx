@@ -81,8 +81,29 @@ export default function EditorV2Page() {
       if (chaptersRes.ok) {
         const chaptersData = await chaptersRes.json();
         setChapters(prev => ({ ...prev, [volumeId]: chaptersData.chapters }));
+        
+        // Load pages for all chapters in this volume
+        const loadedPages: Record<string, Page[]> = {};
+        for (const chapter of chaptersData.chapters) {
+          try {
+            const pagesRes = await fetch(`/api/chapters/${chapter.id}/pages`);
+            if (pagesRes.ok) {
+              const pagesData = await pagesRes.json();
+              loadedPages[chapter.id] = pagesData.pages;
+            }
+          } catch (err) {
+            console.error(`Error loading pages for chapter ${chapter.id}:`, err);
+            loadedPages[chapter.id] = [];
+          }
+        }
+        setPages(prev => ({ ...prev, ...loadedPages }));
+        
         if (chaptersData.chapters.length > 0) {
           setCurrentChapter(chaptersData.chapters[0]);
+          // Set first page of first chapter as current if it exists
+          if (loadedPages[chaptersData.chapters[0].id]?.length > 0) {
+            setCurrentPage(loadedPages[chaptersData.chapters[0].id][0]);
+          }
         }
       }
 
