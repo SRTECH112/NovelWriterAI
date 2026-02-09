@@ -24,6 +24,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    
+    /* Premium Studio Colors */
+    --studio-bg-start: #1a1a2e;
+    --studio-bg-mid: #2d1b4e;
+    --studio-bg-end: #4a2c5e;
+    --studio-accent: #ff6b9d;
+    --studio-cyan: #00d4ff;
+    --studio-violet: #a78bfa;
   }
 
   .dark {
@@ -56,6 +64,159 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ✨ PREMIUM STUDIO BACKGROUND */
+.studio-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(ellipse at top right, rgba(167, 139, 250, 0.15), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(255, 107, 157, 0.12), transparent 50%),
+    radial-gradient(ellipse at center, rgba(0, 212, 255, 0.08), transparent 70%),
+    linear-gradient(135deg, 
+      #1a1a2e 0%,
+      #2d1b4e 35%,
+      #3d2555 60%,
+      #4a2c5e 100%
+    );
+}
+
+/* Grain overlay for texture */
+.studio-background::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 🧊 GLASSMORPHISM UTILITIES */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel-strong {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* 🎨 GRADIENT BUTTONS */
+.gradient-button {
+  background: linear-gradient(135deg, #a78bfa 0%, #ff6b9d 100%);
+  box-shadow: 
+    0 4px 16px rgba(167, 139, 250, 0.3),
+    0 2px 8px rgba(255, 107, 157, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gradient-button:hover {
+  box-shadow: 
+    0 6px 24px rgba(167, 139, 250, 0.4),
+    0 4px 12px rgba(255, 107, 157, 0.3);
+  transform: translateY(-1px);
+}
+
+.gradient-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 12px rgba(167, 139, 250, 0.3),
+    0 1px 6px rgba(255, 107, 157, 0.2);
+}
+
+/* ✨ ACTIVE PAGE GLOW */
+.active-page-glow {
+  position: relative;
+  background: linear-gradient(90deg, rgba(167, 139, 250, 0.15), rgba(255, 107, 157, 0.1));
+  border-left: 2px solid #a78bfa;
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* 📝 PREMIUM EDITOR CARD */
+.editor-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ⏳ GENERATION SHIMMER */
+.generation-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(167, 139, 250, 0.0) 0%,
+    rgba(167, 139, 250, 0.3) 50%,
+    rgba(255, 107, 157, 0.3) 75%,
+    rgba(167, 139, 250, 0.0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 🎯 SMOOTH TRANSITIONS */
+.smooth-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-slide-in {
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 💫 TEXT FADE IN */
+.text-fade-in {
+  animation: textFadeIn 0.6s ease-out;
+}
+
+@keyframes textFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🌟 CURSOR GLOW */
+.cursor-glow {
+  caret-color: #a78bfa;
+  text-shadow: 0 0 8px rgba(167, 139, 250, 0.3);
 }
 
 /* Progress bar dynamic width */

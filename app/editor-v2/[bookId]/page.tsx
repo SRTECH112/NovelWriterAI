@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Plus, Loader2, AlertTriangle, BookOpen, Zap } from 'lucide-react';
-import VolumeSelector from '@/components/VolumeSelector';
-import VolumeChapterPageList from '@/components/VolumeChapterPageList';
-import CreateVolumeModal from '@/components/CreateVolumeModal';
-import DeleteChapterModal from '@/components/DeleteChapterModal';
+import { Loader2 } from 'lucide-react';
+import PremiumStudioEditor from '@/components/PremiumStudioEditor';
 import { Volume, Chapter, Page, StoryBible, VolumeMemory } from '@/lib/types';
 
 export default function EditorV2Page() {
@@ -17,6 +14,7 @@ export default function EditorV2Page() {
   const bookId = params.bookId as string;
 
   const [storyBible, setStoryBible] = useState<StoryBible | null>(null);
+  const [bookTitle, setBookTitle] = useState<string>('Untitled Novel');
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [currentVolumeId, setCurrentVolumeId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<Record<string, Chapter[]>>({});
@@ -26,15 +24,7 @@ export default function EditorV2Page() {
   const [volumeMemory, setVolumeMemory] = useState<VolumeMemory | null>(null);
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showCreateVolume, setShowCreateVolume] = useState(false);
-  const [volumeOutlineBuffer, setVolumeOutlineBuffer] = useState<Record<string, string>>({});
-  const [deleteChapterModal, setDeleteChapterModal] = useState<{
-    chapterId: string;
-    chapterNumber: number;
-    chapterTitle: string;
-    pageCount: number;
-  } | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -400,21 +390,48 @@ export default function EditorV2Page() {
   };
 
 
-  if (status === 'loading') {
+  if (status === 'loading' || initialLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="studio-background" />
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
   }
 
   const currentVolume = volumes.find(v => v.id === currentVolumeId);
 
+  const handleChapterSelect = (chapter: Chapter) => {
+    setCurrentChapter(chapter);
+    const chapterPages = pages[chapter.id] || [];
+    if (chapterPages.length > 0) {
+      setCurrentPage(chapterPages[0]);
+    } else {
+      setCurrentPage(null);
+    }
+  };
+
+  const handlePageSelect = (page: Page) => {
+    setCurrentPage(page);
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Bar */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+    <PremiumStudioEditor
+      volumes={volumes}
+      chapters={chapters}
+      pages={pages}
+      currentChapter={currentChapter}
+      currentPage={currentPage}
+      bookTitle={bookTitle}
+      loading={loading}
+      onChapterSelect={handleChapterSelect}
+      onPageSelect={handlePageSelect}
+      onGeneratePage={handleGeneratePage}
+      volumeOutline={currentVolume?.outline}
+      chapterOutline={currentChapter?.outline}
+    />
+  );
+}
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/dashboard')}
