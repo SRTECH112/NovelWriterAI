@@ -490,8 +490,8 @@ export default function NewBookPage() {
                 <div className="space-y-5">
                   <div className="bg-white/5 rounded-lg p-6 max-h-[500px] overflow-y-auto space-y-4 text-sm border border-white/10">
                     <div>
-                      <h3 className="font-semibold mb-2">Whitepaper (verbatim)</h3>
-                      <div className="whitespace-pre-wrap bg-background border rounded p-3 text-xs">
+                      <h3 className="font-semibold mb-2 text-white">Whitepaper (verbatim)</h3>
+                      <div className="whitespace-pre-wrap bg-white/5 border border-white/10 rounded p-3 text-xs text-white/90">
                         {generatedBible.raw_whitepaper}
                       </div>
                     </div>
