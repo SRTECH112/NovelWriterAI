@@ -65,9 +65,17 @@ export function validateGeneratedBible(
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  // Validate structure exists
+  if (!bible || typeof bible !== 'object') {
+    errors.push('Generated Story Bible is invalid or missing');
+    return { valid: false, errors, warnings };
+  }
+
   // Validate characters
   const inputCharacters = parseCharacters(input.characters_input);
-  const bibleCharacterNames = bible.character_profiles.map(c => c.full_name.toLowerCase());
+  const bibleCharacterNames = (bible.character_profiles || [])
+    .filter(c => c && c.full_name)
+    .map(c => c.full_name.toLowerCase());
   
   for (const inputChar of inputCharacters) {
     const found = bibleCharacterNames.some(name => 
@@ -80,25 +88,27 @@ export function validateGeneratedBible(
   }
 
   // Check for invented characters
-  if (bible.character_profiles.length > inputCharacters.length + 2) {
+  if ((bible.character_profiles?.length || 0) > inputCharacters.length + 2) {
     warnings.push('Story Bible contains significantly more characters than provided in Characters input');
   }
 
   // Validate settings
-  if (bible.world_settings.length === 0) {
+  if (!bible.world_settings || bible.world_settings.length === 0) {
     errors.push('No world settings found in Story Bible despite Settings input being provided');
   }
 
   // Validate themes
-  if (bible.themes.length === 0) {
+  if (!bible.themes || bible.themes.length === 0) {
     errors.push('No themes extracted in Story Bible');
   }
 
   // Check genre alignment
-  const genreLower = input.metadata.genre.toLowerCase();
-  const bibleText = JSON.stringify(bible).toLowerCase();
-  if (!bibleText.includes(genreLower) && genreLower !== 'other') {
-    warnings.push(`Genre "${input.metadata.genre}" not clearly reflected in Story Bible`);
+  if (input.metadata?.genre) {
+    const genreLower = input.metadata.genre.toLowerCase();
+    const bibleText = JSON.stringify(bible).toLowerCase();
+    if (!bibleText.includes(genreLower) && genreLower !== 'other') {
+      warnings.push(`Genre "${input.metadata.genre}" not clearly reflected in Story Bible`);
+    }
   }
 
   // Validate core sections exist
@@ -106,7 +116,7 @@ export function validateGeneratedBible(
     errors.push('Core premise is missing');
   }
 
-  if (bible.hard_constraints.length === 0) {
+  if (!bible.hard_constraints || bible.hard_constraints.length === 0) {
     warnings.push('No hard constraints defined - consider adding story rules');
   }
 
