@@ -13,6 +13,7 @@ export default function EditorV2Page() {
   const { data: session, status } = useSession();
   const bookId = params.bookId as string;
 
+  const [bookTitle, setBookTitle] = useState<string>('Untitled Novel');
   const [storyBible, setStoryBible] = useState<StoryBible | null>(null);
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [currentVolumeId, setCurrentVolumeId] = useState<string | null>(null);
@@ -41,10 +42,16 @@ export default function EditorV2Page() {
 
   const loadBookData = async () => {
     try {
-      const [bibleRes, volumesRes] = await Promise.all([
+      const [bookRes, bibleRes, volumesRes] = await Promise.all([
+        fetch(`/api/books/${bookId}`),
         fetch(`/api/books/${bookId}/story-bible`),
         fetch(`/api/books/${bookId}/volumes`)
       ]);
+
+      if (bookRes.ok) {
+        const bookData = await bookRes.json();
+        setBookTitle(bookData.book?.title || 'Untitled Novel');
+      }
 
       if (bibleRes.ok) {
         const bibleData = await bibleRes.json();
