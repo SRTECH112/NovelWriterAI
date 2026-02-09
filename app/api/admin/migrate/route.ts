@@ -85,7 +85,26 @@ export async function POST(request: NextRequest) {
       console.log('Step 9a: act_id column already removed, skipping migration');
     }
 
-    console.log('✅ Migration completed successfully!');
+    // Step 11: Create pages table if it doesn't exist
+    console.log('Step 11: Creating pages table...');
+    await sql`
+      CREATE TABLE IF NOT EXISTS pages (
+        id SERIAL PRIMARY KEY,
+        chapter_id INTEGER NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+        page_number INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        word_count INTEGER NOT NULL,
+        beat_coverage TEXT,
+        narrative_momentum TEXT,
+        locked BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(chapter_id, page_number),
+        CONSTRAINT valid_word_count CHECK (word_count BETWEEN 600 AND 900)
+      )
+    `;
+
+    console.log('✅ All migrations completed successfully!');
 
     return NextResponse.json({
       success: true,
@@ -94,10 +113,12 @@ export async function POST(request: NextRequest) {
         'Added outline column to volumes table',
         'Added chapter_order column to chapters',
         'Added act_tag column to chapters',
+        'Added page-based columns (target_word_count, target_page_count, current_page_count, outline)',
         'Removed act_id foreign key',
         'Removed old unique constraint (act_id, chapter_number)',
         'Added new unique constraint (volume_id, chapter_number)',
         'Dropped act_id column',
+        'Created pages table for page-based generation',
         'Chapters are now direct children of volumes'
       ]
     });
