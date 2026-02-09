@@ -47,97 +47,44 @@ export async function POST(request: NextRequest) {
       volumeId = volumeResult[0].id.toString();
     }
 
-    // Create Acts and Chapters
-    const createdActs = [];
+    // Create Chapters directly under volume (Acts are now just metadata tags)
+    const createdChapters = [];
     let globalChapterNumber = 1;
+    let chapterOrder = 1;
 
     for (const actData of parsedStructure.acts) {
-      // Map narrative purpose to valid database values
-      const mapNarrativePurpose = (purpose: string): string => {
-        const normalized = purpose.toLowerCase().trim();
-        const validValues = ['setup', 'rising-tension', 'fracture', 'crisis', 'resolution', 'payoff'];
-        
-        // If already valid, return it
-        if (validValues.includes(normalized)) return normalized;
-        
-        // Map common variations
-        if (normalized.includes('setup') || normalized.includes('introduction') || normalized.includes('establish')) return 'setup';
-        if (normalized.includes('rising') || normalized.includes('tension') || normalized.includes('complication')) return 'rising-tension';
-        if (normalized.includes('fracture') || normalized.includes('break') || normalized.includes('disruption')) return 'fracture';
-        if (normalized.includes('crisis') || normalized.includes('climax') || normalized.includes('peak')) return 'crisis';
-        if (normalized.includes('resolution') || normalized.includes('aftermath') || normalized.includes('reconcil')) return 'resolution';
-        if (normalized.includes('payoff') || normalized.includes('closure') || normalized.includes('ending')) return 'payoff';
-        
-        // Default based on act number
-        if (actData.actNumber === 1) return 'setup';
-        if (actData.actNumber === 2) return 'rising-tension';
-        if (actData.actNumber === 3) return 'fracture';
-        if (actData.actNumber === 4) return 'crisis';
-        if (actData.actNumber === 5) return 'resolution';
-        return 'payoff';
-      };
+      // Use act title as metadata tag for chapters
+      const actTag = (actData.title || `Act ${actData.actNumber}`).slice(0, 200);
       
-      // Map pacing to valid values
-      const mapPacing = (pace: string): string => {
-        const normalized = pace.toLowerCase().trim();
-        if (['slow', 'medium', 'fast'].includes(normalized)) return normalized;
-        if (normalized.includes('slow') || normalized.includes('deliberate')) return 'slow';
-        if (normalized.includes('fast') || normalized.includes('quick') || normalized.includes('rapid')) return 'fast';
-        return 'medium';
-      };
-      
-      // Truncate long values to fit database constraints
-      const title = (actData.title || `Act ${actData.actNumber}`).slice(0, 100);
-      const narrativePurpose = mapNarrativePurpose(actData.narrativePurpose || '');
-      const pacing = mapPacing(actData.pacing || 'medium');
-      
-      console.log(`Act ${actData.actNumber}: "${actData.narrativePurpose}" → "${narrativePurpose}"`);
-      
-      // Create Act
-      const actResult = await sql`
-        INSERT INTO acts (
-          volume_id, act_number, title, narrative_purpose,
-          emotional_pressure, pacing, target_chapter_count
-        )
-        VALUES (
-          ${volumeId}, ${actData.actNumber}, ${title},
-          ${narrativePurpose}, ${actData.emotionalPressure}, ${pacing},
-          ${actData.targetChapterCount}
-        )
-        ON CONFLICT (volume_id, act_number)
-        DO UPDATE SET
-          title = EXCLUDED.title,
-          narrative_purpose = EXCLUDED.narrative_purpose,
-          emotional_pressure = EXCLUDED.emotional_pressure,
-          pacing = EXCLUDED.pacing,
-          target_chapter_count = EXCLUDED.target_chapter_count
-        RETURNING id
-      `;
-
-      const actId = actResult[0].id.toString();
+      console.log(`Processing Act ${actData.actNumber}: "${actTag}" with ${actData.chapters.length} chapters`);
 
       // Create Chapter placeholders with outline metadata
       for (const chapterData of actData.chapters) {
         // Truncate long values to fit database constraints
-        const chapterTitle = (chapterData.title || `Chapter ${chapterData.chapterNumber}`).slice(0, 200);
+        const chapterTitle = (chapterData.title || `Chapter ${globalChapterNumber}`).slice(0, 200);
         const chapterSummary = (chapterData.summary || '').slice(0, 1000);
         const emotionalIntent = (chapterData.emotionalIntent || '').slice(0, 500);
         const sceneGoal = (chapterData.plotBeats?.join('; ') || '').slice(0, 1000);
+        const outlineText = `[OUTLINE PLACEHOLDER]\n\nOriginal Outline:\n${chapterData.rawOutlineText}\n\nPlot Beats:\n${chapterData.plotBeats.join('\n- ')}\n\nEmotional Intent: ${chapterData.emotionalIntent}\nCharacter Focus: ${chapterData.characterFocus.join(', ')}\nPacing: ${chapterData.pacingHint}`;
         
         await sql`
           INSERT INTO chapters (
-            book_id, volume_id, act_id, chapter_number, global_chapter_number,
+            book_id, volume_id, chapter_number, chapter_order, global_chapter_number,
             title, summary, content, word_count,
+            target_word_count, target_page_count, current_page_count,
+            outline, act_tag,
             emotional_beat, scene_goal,
             character_states, world_changes, plot_progression,
             canon_warnings, prose_quality_score, prose_quality_issues,
             prose_quality_warnings, regeneration_count
           )
           VALUES (
-            ${bookId}, ${volumeId}, ${actId}, ${chapterData.chapterNumber}, ${globalChapterNumber},
+            ${bookId}, ${volumeId}, ${globalChapterNumber}, ${chapterOrder}, ${globalChapterNumber},
             ${chapterTitle}, ${chapterSummary},
-            ${`[OUTLINE PLACEHOLDER]\n\nOriginal Outline:\n${chapterData.rawOutlineText}\n\nPlot Beats:\n${chapterData.plotBeats.join('\n- ')}\n\nEmotional Intent: ${chapterData.emotionalIntent}\nCharacter Focus: ${chapterData.characterFocus.join(', ')}\nPacing: ${chapterData.pacingHint}`},
+            ${outlineText},
             0,
+            2750, 4, 0,
+            ${outlineText}, ${actTag},
             ${emotionalIntent}, ${sceneGoal},
             ${JSON.stringify({ outlineMetadata: chapterData })},
             ${JSON.stringify([])},
@@ -145,33 +92,35 @@ export async function POST(request: NextRequest) {
             ${JSON.stringify([])}, 0, ${JSON.stringify([])},
             ${JSON.stringify([])}, 0
           )
-          ON CONFLICT (act_id, chapter_number)
+          ON CONFLICT (volume_id, chapter_number)
           DO UPDATE SET
             title = EXCLUDED.title,
             summary = EXCLUDED.summary,
+            outline = EXCLUDED.outline,
+            act_tag = EXCLUDED.act_tag,
             emotional_beat = EXCLUDED.emotional_beat,
             scene_goal = EXCLUDED.scene_goal,
             character_states = EXCLUDED.character_states,
             plot_progression = EXCLUDED.plot_progression
         `;
 
-        globalChapterNumber++;
-      }
+        createdChapters.push({
+          chapterNumber: globalChapterNumber,
+          title: chapterTitle,
+          actTag: actTag,
+        });
 
-      createdActs.push({
-        actId,
-        actNumber: actData.actNumber,
-        title: actData.title,
-        chapterCount: actData.chapters.length,
-      });
+        globalChapterNumber++;
+        chapterOrder++;
+      }
     }
 
     return NextResponse.json({
       success: true,
       volumeId,
-      acts: createdActs,
+      chapters: createdChapters,
       totalChapters: globalChapterNumber - 1,
-      message: 'Outline parsed and structure created successfully',
+      message: 'Outline parsed and structure created successfully (Volume → Chapter hierarchy)',
     });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
