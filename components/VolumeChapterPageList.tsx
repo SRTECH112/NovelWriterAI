@@ -166,20 +166,42 @@ export default function VolumeChapterPageList({
                               <span>Generate Page {chapter.currentPageCount + 1}</span>
                             </button>
                           )}
+
+                          {/* Chapter Complete - Generate Next Chapter */}
+                          {chapter.currentPageCount >= chapter.targetPageCount && (
+                            <div className="text-xs text-center py-2 text-green-600 font-medium">
+                              ✓ Chapter Complete ({chapter.wordCount} words)
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   );
                 })}
 
-                {/* Add Chapter Button */}
-                <button
-                  onClick={() => onAddChapter(volume.id)}
-                  className="w-full text-left text-sm p-2 rounded flex items-center gap-2 hover:bg-muted text-muted-foreground"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Chapter</span>
-                </button>
+                {/* Generate Next Chapter Button (if last chapter is complete) */}
+                {volumeChapters.length > 0 && 
+                 volumeChapters[volumeChapters.length - 1].currentPageCount >= volumeChapters[volumeChapters.length - 1].targetPageCount && (
+                  <button
+                    onClick={() => onAddChapter(volume.id)}
+                    className="w-full text-left text-sm p-2 rounded flex items-center gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-600 font-medium"
+                  >
+                    <Zap className="h-4 w-4" />
+                    <span>Generate Next Chapter</span>
+                  </button>
+                )}
+
+                {/* Add Chapter Button (if no chapters or last chapter incomplete) */}
+                {(volumeChapters.length === 0 || 
+                  volumeChapters[volumeChapters.length - 1].currentPageCount < volumeChapters[volumeChapters.length - 1].targetPageCount) && (
+                  <button
+                    onClick={() => onAddChapter(volume.id)}
+                    className="w-full text-left text-sm p-2 rounded flex items-center gap-2 hover:bg-muted text-muted-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Chapter</span>
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -224,13 +224,25 @@ export default function EditorV2Page() {
           .sort((a, b) => a.pageNumber - b.pageNumber)
       }));
       
-      // Update chapter progress
-      if (currentChapter?.id === chapterId) {
-        setCurrentChapter(prev => prev ? {
+      // Update chapter progress in both currentChapter and chapters list
+      const updatedChapter = {
+        ...currentChapter,
+        currentPageCount: result.chapterProgress.currentPageCount,
+        wordCount: result.chapterProgress.totalWordCount,
+      };
+      
+      setCurrentChapter(updatedChapter as Chapter);
+      
+      // Update chapters state to reflect the new word count and page count
+      if (currentChapter?.volumeId) {
+        setChapters(prev => ({
           ...prev,
-          currentPageCount: result.chapterProgress.currentPageCount,
-          wordCount: result.chapterProgress.totalWordCount,
-        } : null);
+          [currentChapter.volumeId]: (prev[currentChapter.volumeId] || []).map(c =>
+            c.id === chapterId
+              ? { ...c, currentPageCount: result.chapterProgress.currentPageCount, wordCount: result.chapterProgress.totalWordCount }
+              : c
+          )
+        }));
       }
       
       setCurrentPage(result.page);
