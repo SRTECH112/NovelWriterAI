@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Volume, Chapter, Page } from '@/lib/types';
-import { ChevronDown, ChevronRight, Sparkles, Save, User, BookOpen, Layers } from 'lucide-react';
+import { ChevronDown, ChevronRight, Sparkles, Save, User, BookOpen, Layers, Trash2 } from 'lucide-react';
 
 interface PremiumStudioEditorProps {
   volumes: Volume[];
@@ -15,6 +15,7 @@ interface PremiumStudioEditorProps {
   onChapterSelect: (chapter: Chapter) => void;
   onPageSelect: (page: Page) => void;
   onGeneratePage: (chapterId: string, pageNumber: number) => void;
+  onRemovePage: (pageId: string, chapterId: string) => void;
   volumeOutline?: string;
   chapterOutline?: string;
 }
@@ -30,6 +31,7 @@ export default function PremiumStudioEditor({
   onChapterSelect,
   onPageSelect,
   onGeneratePage,
+  onRemovePage,
   volumeOutline,
   chapterOutline,
 }: PremiumStudioEditorProps) {
@@ -175,17 +177,30 @@ export default function PremiumStudioEditor({
                                   {chapterPages.map(page => {
                                     const isPageActive = currentPage?.id === page.id;
                                     return (
-                                      <button
-                                        key={page.id}
-                                        onClick={() => onPageSelect(page)}
-                                        className={`w-full text-left px-3 py-1.5 rounded-lg text-xs smooth-transition ${
-                                          isPageActive 
-                                            ? 'active-page-glow text-white' 
-                                            : 'text-white/60 hover:bg-white/5 hover:text-white/80'
-                                        }`}
-                                      >
-                                        Page {page.pageNumber} · {page.wordCount} words
-                                      </button>
+                                      <div key={page.id} className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => onPageSelect(page)}
+                                          className={`flex-1 text-left px-3 py-1.5 rounded-lg text-xs smooth-transition ${
+                                            isPageActive 
+                                              ? 'active-page-glow text-white' 
+                                              : 'text-white/60 hover:bg-white/5 hover:text-white/80'
+                                          }`}
+                                        >
+                                          Page {page.pageNumber} · {page.wordCount} words
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Delete Page ${page.pageNumber}? This cannot be undone.`)) {
+                                              onRemovePage(page.id, chapter.id);
+                                            }
+                                          }}
+                                          className="p-1.5 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 smooth-transition"
+                                          title="Delete page"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
                                     );
                                   })}
                                 </div>
