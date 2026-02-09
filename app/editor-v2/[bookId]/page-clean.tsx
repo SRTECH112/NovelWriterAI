@@ -253,7 +253,7 @@ export default function EditorV2Page() {
       pages={pages}
       currentChapter={currentChapter}
       currentPage={currentPage}
-      bookTitle={storyBible?.title || 'Untitled Novel'}
+      bookTitle={bookTitle}
       loading={loading}
       onChapterSelect={handleChapterSelect}
       onPageSelect={handlePageSelect}
