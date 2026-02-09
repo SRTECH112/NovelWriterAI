@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS story_bibles (
   id SERIAL PRIMARY KEY,
   book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
   raw_whitepaper TEXT NOT NULL,
+  characters TEXT, -- Core character descriptions (personalities, traits, relationships)
+  settings TEXT, -- World settings, locations, atmosphere, social rules
   world_rules JSONB DEFAULT '[]',
   lore_timeline JSONB DEFAULT '[]',
   factions JSONB DEFAULT '[]',

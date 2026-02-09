@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
     const body = await request.json();
-    const { whitepaper, metadata, bookId } = body;
+    const { whitepaper, characters, settings, metadata, bookId } = body;
 
     if (!whitepaper || whitepaper.trim().length === 0) {
       return NextResponse.json(
@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     const storyBible: StoryBible = {
       id: `bible_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       raw_whitepaper: whitepaper,
+      characters: characters || '',
+      settings: settings || '',
       structured_sections,
       locked: false,
       metadata: metadata || {},

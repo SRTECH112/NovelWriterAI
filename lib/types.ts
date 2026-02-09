@@ -1,6 +1,8 @@
 export interface StoryBible {
   id: string;
   raw_whitepaper: string;
+  characters?: string;
+  settings?: string;
   structured_sections: {
     worldRules: string[];
     loreTimeline: TimelineEvent[];

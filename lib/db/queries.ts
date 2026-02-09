@@ -61,12 +61,13 @@ export async function deleteBook(bookId: string, userId: string) {
 export async function saveStoryBible(bookId: string, bible: StoryBible) {
   const result = await sql`
     INSERT INTO story_bibles (
-      book_id, raw_whitepaper, world_rules, lore_timeline, factions,
+      book_id, raw_whitepaper, characters, settings, world_rules, lore_timeline, factions,
       technology_magic_rules, themes_tone, hard_constraints, soft_guidelines,
       locked, genre, tone, target_length, pov
     )
     VALUES (
-      ${bookId}, ${bible.raw_whitepaper}, ${JSON.stringify(bible.structured_sections.worldRules)},
+      ${bookId}, ${bible.raw_whitepaper}, ${bible.characters || ''}, ${bible.settings || ''},
+      ${JSON.stringify(bible.structured_sections.worldRules)},
       ${JSON.stringify(bible.structured_sections.loreTimeline)}, ${JSON.stringify(bible.structured_sections.factions)},
       ${JSON.stringify(bible.structured_sections.technologyMagicRules)}, ${JSON.stringify(bible.structured_sections.themesTone)},
       ${JSON.stringify(bible.structured_sections.hardConstraints)}, ${JSON.stringify(bible.structured_sections.softGuidelines)},
@@ -75,6 +76,8 @@ export async function saveStoryBible(bookId: string, bible: StoryBible) {
     ON CONFLICT (book_id) 
     DO UPDATE SET
       raw_whitepaper = EXCLUDED.raw_whitepaper,
+      characters = EXCLUDED.characters,
+      settings = EXCLUDED.settings,
       world_rules = EXCLUDED.world_rules,
       lore_timeline = EXCLUDED.lore_timeline,
       factions = EXCLUDED.factions,

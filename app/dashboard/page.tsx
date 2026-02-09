@@ -131,7 +131,7 @@ export default function DashboardPage() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold">Novelist AI</span>
+              <span className="text-xl font-bold">NovelWriter AI</span>
             </div>
             <Button onClick={() => router.push('/new-book')} className="gradient-button text-white">
               <Plus className="h-5 w-5 mr-2" />

@@ -27,6 +27,8 @@ export default function NewBookPage() {
   const [tone, setTone] = useState('');
   const [targetWordCount, setTargetWordCount] = useState(80000);
   const [whitepaper, setWhitepaper] = useState('');
+  const [characters, setCharacters] = useState('');
+  const [settings, setSettings] = useState('');
   const [storyOutline, setStoryOutline] = useState('');
   const [generatedBible, setGeneratedBible] = useState<StoryBible | null>(null);
   const [parsedOutline, setParsedOutline] = useState<any>(null);
@@ -47,6 +49,14 @@ export default function NewBookPage() {
       setError('Please provide your story concept or whitepaper');
       return;
     }
+    if (!characters.trim()) {
+      setError('Please describe your main characters');
+      return;
+    }
+    if (!settings.trim()) {
+      setError('Please describe your story settings and world');
+      return;
+    }
     setError('');
     setCurrentStep('bible');
   };
@@ -61,6 +71,8 @@ export default function NewBookPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           whitepaper,
+          characters,
+          settings,
           metadata: { genre, tone, targetLength: targetWordCount, pov },
         }),
       });
@@ -385,11 +397,39 @@ export default function NewBookPage() {
                   id="whitepaper"
                   value={whitepaper}
                   onChange={(e) => setWhitepaper(e.target.value)}
-                  placeholder="Describe your story world, characters, magic systems, technology, factions, timeline, themes, and any other important details..."
-                  className="min-h-[300px] font-mono text-sm premium-input text-white placeholder:text-white/40"
+                  placeholder="Describe your story world, magic systems, technology, factions, timeline, themes, and any other important details..."
+                  className="min-h-[250px] font-mono text-sm premium-input text-white placeholder:text-white/40"
                 />
                 <p className="text-sm text-white/50 mt-2">
-                  Include as much detail as possible about your world, characters, rules, and story elements.
+                  Include as much detail as possible about your world, rules, and story elements.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="characters" className="text-white/90">Characters</Label>
+                <Textarea
+                  id="characters"
+                  value={characters}
+                  onChange={(e) => setCharacters(e.target.value)}
+                  placeholder="Kate Andrea Clauzure – confident, socially powerful, hides emotional fatigue&#10;Marvin Jay Lockhart – reserved, observant, uncomfortable with attention&#10;&#10;List your main and supporting characters with their personalities, traits, and relationships."
+                  className="min-h-[200px] font-mono text-sm premium-input text-white placeholder:text-white/40"
+                />
+                <p className="text-sm text-white/50 mt-2">
+                  List main and supporting characters. Personality matters more than perfection.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="settings" className="text-white/90">Settings & World</Label>
+                <Textarea
+                  id="settings"
+                  value={settings}
+                  onChange={(e) => setSettings(e.target.value)}
+                  placeholder="Mabini Colleges, Daet — elite private academy with strict social hierarchy&#10;&#10;Describe your key locations, atmosphere, social rules, and time period."
+                  className="min-h-[200px] font-mono text-sm premium-input text-white placeholder:text-white/40"
+                />
+                <p className="text-sm text-white/50 mt-2">
+                  Describe locations, atmosphere, and world rules that shape your story.
                 </p>
               </div>
 
@@ -403,7 +443,7 @@ export default function NewBookPage() {
                   value={storyOutline}
                   onChange={(e) => setStoryOutline(e.target.value)}
                   placeholder="Paste your chapter outline here. Can be:&#10;- Bullet points&#10;- Chapter summaries&#10;- Act breakdowns&#10;- Messy notes&#10;&#10;Example:&#10;Act 1 - Setup&#10;Ch 1: Kate's first day, meets Marvin&#10;Ch 2: Discovers Marvin's secret identity&#10;Ch 3: Love triangle begins with Boy A&#10;&#10;Act 2 - Rising Tension&#10;Ch 4: Kate and Marvin grow closer&#10;..."
-                  className="min-h-[300px] font-mono text-sm premium-input text-white placeholder:text-white/40"
+                  className="min-h-[250px] font-mono text-sm premium-input text-white placeholder:text-white/40"
                 />
                 <p className="text-sm text-white/50 mt-2">
                   AI will parse this into structured Acts and Chapters. Supports plain text, bullet points, or informal notes.

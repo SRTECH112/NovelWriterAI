@@ -6,7 +6,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Novelist AI - Canon-Enforced Novel Writing",
+  title: "NovelWriter AI",
   description: "AI-powered long-form novel writing with Story Bible canon enforcement",
 };
 

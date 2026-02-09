@@ -192,6 +192,14 @@ Each page should cover 1-2 micro-beats:
 - The chapter feels like a continuous novella, not fragments
 
 STORY BIBLE CONTEXT:
+${storyBible.characters ? `
+📖 CHARACTERS (CANONICAL):
+${storyBible.characters}
+` : ''}
+${storyBible.settings ? `
+🌍 SETTINGS & WORLD (CANONICAL):
+${storyBible.settings}
+` : ''}
 World Rules: ${sections.worldRules?.slice(0, 3).join('; ') || 'Not specified'}
 Themes: ${sections.themesTone?.slice(0, 3).join(', ') || 'Not specified'}
 
