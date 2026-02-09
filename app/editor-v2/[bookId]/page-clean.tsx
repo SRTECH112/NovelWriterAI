@@ -183,6 +183,58 @@ export default function EditorV2Page() {
     setCurrentPage(page);
   };
 
+  const handleRemovePage = async (pageId: string, chapterId: string) => {
+    try {
+      const response = await fetch(`/api/pages/${pageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete page');
+      }
+
+      // Remove page from state
+      setPages(prev => ({
+        ...prev,
+        [chapterId]: (prev[chapterId] || []).filter(p => p.id !== pageId)
+      }));
+
+      // Update chapter stats
+      const remainingPages = (pages[chapterId] || []).filter(p => p.id !== pageId);
+      const newWordCount = remainingPages.reduce((sum, p) => sum + p.wordCount, 0);
+      const newPageCount = remainingPages.length;
+
+      setChapters(prev => ({
+        ...prev,
+        [currentChapter?.volumeId || '']: (prev[currentChapter?.volumeId || ''] || []).map(c =>
+          c.id === chapterId
+            ? { ...c, currentPageCount: newPageCount, wordCount: newWordCount }
+            : c
+        )
+      }));
+
+      if (currentChapter?.id === chapterId) {
+        setCurrentChapter(prev => prev ? {
+          ...prev,
+          currentPageCount: newPageCount,
+          wordCount: newWordCount
+        } : null);
+      }
+
+      // If deleted page was current, select another page
+      if (currentPage?.id === pageId) {
+        if (remainingPages.length > 0) {
+          setCurrentPage(remainingPages[remainingPages.length - 1]);
+        } else {
+          setCurrentPage(null);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error removing page:', err);
+      alert('Failed to remove page: ' + err.message);
+    }
+  };
+
   if (status === 'loading' || initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -206,6 +258,7 @@ export default function EditorV2Page() {
       onChapterSelect={handleChapterSelect}
       onPageSelect={handlePageSelect}
       onGeneratePage={handleGeneratePage}
+      onRemovePage={handleRemovePage}
       volumeOutline={currentVolume?.outline}
       chapterOutline={currentChapter?.outline}
     />
