@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get previous pages
+    // Get previous pages (AI will use last 17 for deep memory context)
+    // Load all previous pages in chapter, AI service will slice to last 17
     const previousPages = await sql`
       SELECT * FROM pages
       WHERE chapter_id = ${chapterId} AND page_number < ${pageNumber}

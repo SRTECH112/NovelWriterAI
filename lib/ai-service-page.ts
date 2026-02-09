@@ -79,62 +79,70 @@ ${chapterOutline}
 
 BREAK THIS OUTLINE INTO ${totalPages} PAGES:
 ${isFirstPage ? '- Page 1: Opening beats' : ''}
-${pageNumber === 2 && totalPages >= 3 ? '- Page 2: Escalation beats' : ''}
-${pageNumber === 3 && totalPages >= 4 ? '- Page 3: Turning beat' : ''}
-${pageNumber === totalPages - 1 && totalPages >= 4 ? `- Page ${totalPages - 1}: Pre-climax tension` : ''}
-${isLastPage ? `- Page ${totalPages}: Climax (final page only)` : ''}
-
-YOU ARE WRITING PAGE ${pageNumber}.
-COVER ONLY THE BEATS ASSIGNED TO THIS PAGE.
 ` : ''}
 
 ${previousPages.length > 0 ? `
-📖 PREVIOUS PAGE CONTEXT 📖
-Last page ended with:
-${previousPages[previousPages.length - 1].content.slice(-500)}
+📖 PREVIOUS PAGES IN THIS CHAPTER (LAST ${Math.min(previousPages.length, 17)} PAGES):
+${previousPages.slice(-17).map(p => `
+--- Page ${p.pageNumber} (${p.wordCount} words) ---
+${p.content}
 
-Beat coverage so far: ${previousPages.map(p => p.beatCoverage).filter(Boolean).join(', ')}
+Beat Coverage: ${p.beatCoverage || 'N/A'}
+Narrative Momentum: ${p.narrativeMomentum || 'N/A'}
+`).join('\n')}
 
-YOU MUST CONTINUE SEAMLESSLY FROM THE LAST PAGE.
-NO TIME JUMPS. NO SCENE SKIPS.
-` : ''}
+🔗 PAGE-TO-PAGE CONTINUITY ENFORCEMENT (CRITICAL)
+Page ${pageNumber} MUST:
+✅ Begin EXACTLY where Page ${pageNumber - 1} ended
+✅ Continue the same scene, beat, thought, or action
+✅ Maintain scene location, emotional tone, ongoing dialogue
+✅ Reference the immediate aftermath of the previous page's ending
+✅ Treat this as a hard line break, NOT a chapter break
 
-🚫 HARD FAIL CONDITIONS (WILL BLOCK GENERATION) 🚫
+FORBIDDEN ACTIONS:
+❌ Time skips (unless outline explicitly requires)
+❌ Scene resets or location changes without transition
+❌ Re-explaining the premise or re-describing the setting
+❌ Reintroducing characters as if they just appeared
+❌ Using "Later that day..." or "Meanwhile..." without outline permission
+❌ Forgetting actions or dialogue from the last 2-3 pages
+❌ Abruptly changing tone or pacing
 
-YOU WILL TRIGGER AN ERROR IF YOU:
-❌ Write more than 900 words (page too long)
-❌ Write less than 600 words (page too short)
-❌ Try to finish the chapter early (unless page ${totalPages})
-❌ Introduce events from the next chapter
-❌ Resolve volume-level arcs (unless final volume)
-❌ Skip outlined beats
-❌ Jump ahead in time
-❌ Resolve relationship turning points prematurely
+✍️ CONTINUATION RULES:
+First paragraph of Page ${pageNumber} must:
+- Reference the immediate aftermath of Page ${pageNumber - 1}'s ending
+- Continue the same beat, thought, or action
+- Use soft transitions, ongoing internal monologue, or dialogue continuation
+- Feel like a natural continuation, not a new section
 
-${!isLastPage ? `
-⚠️ THIS IS NOT THE FINAL PAGE ⚠️
-YOU ARE FORBIDDEN FROM:
-❌ Resolving the chapter climax
-❌ Providing emotional closure
-❌ Using conclusive language
-❌ Wrapping up the scene
+Page ending should:
+- Slightly hook forward to the next page
+- Never fully resolve the scene (unless this is the final page)
+- Leave dialogue, thoughts, or actions mid-flow when appropriate
+` : 'This is the FIRST page of the chapter. Set the opening scene and establish the initial situation.'}
 
-YOU MUST:
-✅ End with narrative momentum
-✅ Leave tension unresolved
-✅ Create anticipation for next page
-✅ Stop at a natural micro-beat boundary
-` : `
-✅ THIS IS THE FINAL PAGE (${totalPages}) ✅
-YOU MAY:
-✅ Resolve the chapter climax
-✅ Complete the chapter arc
-✅ Deliver emotional payoff for THIS chapter only
+🎭 PACING RULES (CRITICAL)
+${!structureContext.isLastChapter ? `
+✅ Slow burn pacing
+✅ Gradual emotional buildup
+✅ Leave major conflicts unresolved
+✅ End with forward momentum
+✅ Tease future developments
 
-BUT STILL FORBIDDEN:
-❌ Resolving volume-level conflicts
+❌ No major resolutions
+❌ No relationship breakthroughs (save for later volumes)
+❌ No "happily ever after" moments
+❌ No premature climaxes
 ❌ Resolving act-level arcs
 ❌ Using "happily ever after" language
+` : `
+✅ Deliver chapter climax
+✅ Resolve chapter-level tension
+✅ Set up next chapter hook
+✅ Maintain volume-level tension
+
+❌ Resolving volume-level arcs
+❌ Major relationship breakthroughs (save for later volumes)
 `}
 
 ⚠️ PARAGRAPH FORMATTING (MANDATORY) ⚠️
@@ -159,12 +167,15 @@ CRITICAL: This page MUST be between 600-1200 words.
 - Slow emotional buildup
 - Internal thoughts and reactions
 - Sensory details and atmosphere
+- Pages feel like continuous flow, not stitched segments
 
 FORBIDDEN:
 ❌ Speed-running plots
 ❌ One-page emotional resolutions
 ❌ "The End" style closures
 ❌ Summary-style narration
+❌ Standalone pages that don't flow from previous content
+❌ Repeating exposition already stated in prior pages
 
 🎯 MICRO-BEAT COVERAGE 🎯
 Each page should cover 1-2 micro-beats:
@@ -172,6 +183,13 @@ Each page should cover 1-2 micro-beats:
 - Expand each micro-beat with: dialogue, internal monologue, sensory details, emotional reactions
 - Take 500-600 words per micro-beat
 - Do NOT rush through beats
+- Beats should flow naturally from the previous page's momentum
+
+✅ SUCCESS INDICATORS:
+- Page ${pageNumber} reads like a natural continuation of Page ${pageNumber - 1}
+- Dialogue can span multiple pages without reset
+- Emotional arcs build gradually across pages
+- The chapter feels like a continuous novella, not fragments
 
 STORY BIBLE CONTEXT:
 World Rules: ${sections.worldRules?.slice(0, 3).join('; ') || 'Not specified'}
@@ -187,16 +205,39 @@ OUTPUT FORMAT (strict JSON):
 
   const userPrompt = `Write Page ${pageNumber} of ${totalPages} for Chapter ${chapter.chapterNumber}.
 
-${isFirstPage ? 'This is the FIRST page. Set the scene and introduce the opening beats.' : ''}
-${isLastPage ? 'This is the FINAL page. Deliver the chapter climax and resolution.' : ''}
-${!isFirstPage && !isLastPage ? `This is a MIDDLE page. Continue the story from the previous page and advance 1-2 micro-beats.` : ''}
+${isFirstPage ? `🎬 FIRST PAGE INSTRUCTIONS:
+- Set the scene and establish the opening situation
+- Introduce characters naturally in their environment
+- Begin the chapter's emotional journey
+- Create forward momentum for the next pages` : ''}
+
+${!isFirstPage && !isLastPage ? `🔗 CONTINUATION PAGE INSTRUCTIONS:
+- Begin EXACTLY where Page ${pageNumber - 1} ended
+- DO NOT reset the scene or reintroduce characters
+- Continue ongoing dialogue, thoughts, or actions seamlessly
+- Maintain the same emotional tone and scene location
+- Advance 1-2 micro-beats while preserving narrative flow
+- The reader should NOT feel a break between pages` : ''}
+
+${isLastPage ? `🎯 FINAL PAGE INSTRUCTIONS:
+- Continue seamlessly from Page ${pageNumber - 1}
+- Deliver the chapter's emotional climax
+- Resolve the chapter-level tension
+- Create a hook for the next chapter
+- DO NOT resolve volume-level arcs` : ''}
 
 Chapter: ${chapter.title || `Chapter ${chapter.chapterNumber}`}
 ${chapter.emotionalBeat ? `Emotional Beat: ${chapter.emotionalBeat}` : ''}
 ${chapter.sceneGoal ? `Scene Goal: ${chapter.sceneGoal}` : ''}
 
-TARGET: 700-800 words
-STRICT LIMITS: 600 minimum, 900 maximum
+${previousPages.length > 0 ? `
+🔗 CRITICAL REMINDER:
+Your first sentence must flow directly from the last sentence of Page ${pageNumber - 1}.
+The reader should experience this as ONE continuous story, not separate segments.
+` : ''}
+
+TARGET: ~1000 words
+STRICT LIMITS: 600 minimum, 1200 maximum
 
 Write the page now as valid JSON.`;
 
