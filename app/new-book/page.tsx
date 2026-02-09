@@ -308,7 +308,7 @@ export default function NewBookPage() {
               <div>
                 <Label htmlFor="genre" className="text-white/90">Genre</Label>
                 <Select value={genre} onValueChange={setGenre}>
-                  <SelectTrigger>
+                  <SelectTrigger className="premium-input text-white">
                     <SelectValue placeholder="Select genre" />
                   </SelectTrigger>
                   <SelectContent>
@@ -328,7 +328,7 @@ export default function NewBookPage() {
               <div>
                 <Label htmlFor="pov" className="text-white/90">Point of View</Label>
                 <Select value={pov} onValueChange={setPov}>
-                  <SelectTrigger>
+                  <SelectTrigger className="premium-input text-white">
                     <SelectValue placeholder="Select POV" />
                   </SelectTrigger>
                   <SelectContent>
@@ -343,7 +343,7 @@ export default function NewBookPage() {
               <div>
                 <Label htmlFor="tone" className="text-white/90">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
-                  <SelectTrigger>
+                  <SelectTrigger className="premium-input text-white">
                     <SelectValue placeholder="Select tone" />
                   </SelectTrigger>
                   <SelectContent>
