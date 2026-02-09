@@ -18,9 +18,15 @@ export async function POST(request: NextRequest) {
     
     console.log('Step 2: Adding act_tag column...');
     await sql`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS act_tag VARCHAR(200)`;
+    
+    console.log('Step 3: Adding page-based columns...');
+    await sql`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS target_word_count INTEGER DEFAULT 2750`;
+    await sql`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS target_page_count INTEGER DEFAULT 4`;
+    await sql`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS current_page_count INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE chapters ADD COLUMN IF NOT EXISTS outline TEXT`;
 
     // Step 2: Update chapter_order for existing chapters
-    console.log('Step 3: Setting chapter_order values...');
+    console.log('Step 4: Setting chapter_order values...');
     await sql`UPDATE chapters SET chapter_order = chapter_number WHERE chapter_order IS NULL`;
 
     // Step 3: Make chapter_order NOT NULL
@@ -52,21 +58,32 @@ export async function POST(request: NextRequest) {
     console.log('Step 8: Making volume_id NOT NULL...');
     await sql`ALTER TABLE chapters ALTER COLUMN volume_id SET NOT NULL`;
 
-    // Step 7: Migrate act info to act_tag
-    console.log('Step 9: Migrating act information to act_tag...');
-    await sql`
-      UPDATE chapters c
-      SET act_tag = (
-        SELECT a.title 
-        FROM acts a 
-        WHERE a.id = c.act_id
-      )
-      WHERE c.act_id IS NOT NULL
+    // Step 7: Migrate act info to act_tag (only if act_id column still exists)
+    console.log('Step 9: Checking if act_id column exists...');
+    const actIdExists = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'chapters' AND column_name = 'act_id'
     `;
-
-    // Step 8: Drop act_id column
-    console.log('Step 10: Dropping act_id column...');
-    await sql`ALTER TABLE chapters DROP COLUMN IF EXISTS act_id`;
+    
+    if (actIdExists.length > 0) {
+      console.log('Step 9a: Migrating act information to act_tag...');
+      await sql`
+        UPDATE chapters c
+        SET act_tag = (
+          SELECT a.title 
+          FROM acts a 
+          WHERE a.id = c.act_id
+        )
+        WHERE c.act_id IS NOT NULL
+      `;
+      
+      // Step 8: Drop act_id column
+      console.log('Step 10: Dropping act_id column...');
+      await sql`ALTER TABLE chapters DROP COLUMN IF EXISTS act_id`;
+    } else {
+      console.log('Step 9a: act_id column already removed, skipping migration');
+    }
 
     console.log('✅ Migration completed successfully!');
 
