@@ -42,10 +42,16 @@ export default function EditorV2Page() {
 
   const loadBookData = async () => {
     try {
-      const [bibleRes, volumesRes] = await Promise.all([
+      const [bookRes, bibleRes, volumesRes] = await Promise.all([
+        fetch(`/api/books/${bookId}`),
         fetch(`/api/books/${bookId}/story-bible`),
         fetch(`/api/books/${bookId}/volumes`)
       ]);
+
+      if (bookRes.ok) {
+        const bookData = await bookRes.json();
+        setBookTitle(bookData.book?.title || 'Untitled Novel');
+      }
 
       if (bibleRes.ok) {
         const bibleData = await bibleRes.json();
