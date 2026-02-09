@@ -17,6 +17,9 @@ interface Book {
   progress: number;
   current_chapter: number;
   total_chapters: number;
+  total_volumes: number;
+  total_pages: number;
+  total_words: number;
   last_edited_at: string;
   canon_locked: boolean;
 }
@@ -214,9 +217,23 @@ export default function DashboardPage() {
                         style={{ width: `${book.progress}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/60">Chapters</span>
-                      <span className="font-semibold text-white">{book.current_chapter} / {book.total_chapters || '—'}</span>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Volumes</span>
+                        <span className="font-semibold text-white">{book.total_volumes || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Chapters</span>
+                        <span className="font-semibold text-white">{book.total_chapters || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Pages</span>
+                        <span className="font-semibold text-white">{book.total_pages || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Words</span>
+                        <span className="font-semibold text-white">{(book.total_words || 0).toLocaleString()}</span>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
                       <span className="text-white/50">Last edited: {new Date(book.last_edited_at).toLocaleDateString()}</span>

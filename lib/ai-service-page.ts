@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { StoryBible, Chapter, Volume, Act, Page } from '@/lib/types';
 import { formatProse } from '@/lib/format-prose';
+import { parseCharacters, formatCharacterCanonForAI } from '@/lib/parse-characters';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -192,10 +193,7 @@ Each page should cover 1-2 micro-beats:
 - The chapter feels like a continuous novella, not fragments
 
 STORY BIBLE CONTEXT:
-${storyBible.characters ? `
-📖 CHARACTERS (CANONICAL):
-${storyBible.characters}
-` : ''}
+${storyBible.characters ? formatCharacterCanonForAI(parseCharacters(storyBible.characters)) : ''}
 ${storyBible.settings ? `
 🌍 SETTINGS & WORLD (CANONICAL):
 ${storyBible.settings}

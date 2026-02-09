@@ -20,9 +20,19 @@ export async function createBook(userId: string, data: {
 
 export async function getUserBooks(userId: string) {
   return await sql`
-    SELECT * FROM books 
-    WHERE user_id = ${userId}
-    ORDER BY last_edited_at DESC
+    SELECT 
+      b.*,
+      COUNT(DISTINCT v.id) as total_volumes,
+      COUNT(DISTINCT c.id) as total_chapters,
+      COUNT(DISTINCT p.id) as total_pages,
+      COALESCE(SUM(p.word_count), 0) as total_words
+    FROM books b
+    LEFT JOIN volumes v ON v.book_id = b.id
+    LEFT JOIN chapters c ON c.book_id = b.id
+    LEFT JOIN pages p ON p.chapter_id = c.id
+    WHERE b.user_id = ${userId}
+    GROUP BY b.id
+    ORDER BY b.last_edited_at DESC
   `;
 }
 
