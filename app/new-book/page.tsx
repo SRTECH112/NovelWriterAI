@@ -246,13 +246,15 @@ export default function NewBookPage() {
       <div className="flex items-center justify-center mb-8">
         {steps.map((step, index) => (
           <div key={step.key} className="flex items-center">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-              index <= currentIndex ? 'border-primary bg-primary text-primary-foreground' : 'border-muted bg-background'
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold ${
+              index <= currentIndex 
+                ? 'border-blue-500 bg-blue-500 text-white' 
+                : 'border-white/30 bg-white/10 backdrop-blur-sm text-white/70'
             }`}>
               {index < currentIndex ? <Check className="h-5 w-5" /> : step.number}
             </div>
             {index < steps.length - 1 && (
-              <div className={`w-24 h-0.5 ${index < currentIndex ? 'bg-primary' : 'bg-muted'}`} />
+              <div className={`w-24 h-0.5 ${index < currentIndex ? 'bg-blue-500' : 'bg-white/20'}`} />
             )}
           </div>
         ))}
