@@ -249,48 +249,52 @@ export default function NewBookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <NavigationBar />
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="mb-6">
-          <Button variant="ghost" onClick={() => router.push('/dashboard')}>
+    <div className="min-h-screen premium-page-bg text-white">
+      <div className="glass-nav sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-4">
+          <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => router.push('/dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
         </div>
-
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2">Create New Book</h1>
-          <p className="text-muted-foreground">Follow the steps to set up your AI-powered novel project</p>
+      </div>
+      
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="mb-12 mt-8 text-center fade-in-up">
+          <h1 className="text-5xl font-bold mb-3 gradient-text">Create New Book</h1>
+          <p className="text-white/70 text-lg">Follow the steps to set up your AI-powered novel project</p>
         </div>
 
-        {renderStepIndicator()}
+        <div className="fade-in-up stagger-1">
+          {renderStepIndicator()}
+        </div>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-            <p className="text-destructive">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 glass-card fade-in-up">
+            <p className="text-red-300">{error}</p>
           </div>
         )}
 
         {currentStep === 'setup' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Book Setup</CardTitle>
-              <CardDescription>Define the basic parameters for your novel</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="glass-card p-8 fade-in-up">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Book Setup</h2>
+              <p className="text-white/70">Define the basic parameters for your novel</p>
+            </div>
+            <div className="space-y-5">
               <div>
-                <Label htmlFor="title">Book Title</Label>
+                <Label htmlFor="title" className="text-white/90">Book Title</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter your book title"
+                  className="premium-input text-white placeholder:text-white/40"
                 />
               </div>
 
               <div>
-                <Label htmlFor="genre">Genre</Label>
+                <Label htmlFor="genre" className="text-white/90">Genre</Label>
                 <Select value={genre} onValueChange={setGenre}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select genre" />
@@ -310,7 +314,7 @@ export default function NewBookPage() {
               </div>
 
               <div>
-                <Label htmlFor="pov">Point of View</Label>
+                <Label htmlFor="pov" className="text-white/90">Point of View</Label>
                 <Select value={pov} onValueChange={setPov}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select POV" />
@@ -325,7 +329,7 @@ export default function NewBookPage() {
               </div>
 
               <div>
-                <Label htmlFor="tone">Tone</Label>
+                <Label htmlFor="tone" className="text-white/90">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select tone" />
@@ -342,7 +346,7 @@ export default function NewBookPage() {
               </div>
 
               <div>
-                <Label htmlFor="wordcount">Target Word Count</Label>
+                <Label htmlFor="wordcount" className="text-white/90">Target Word Count</Label>
                 <Input
                   id="wordcount"
                   type="number"
@@ -351,97 +355,98 @@ export default function NewBookPage() {
                   min={10000}
                   max={200000}
                   step={10000}
+                  className="premium-input text-white"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-white/50 mt-1">
                   Typical novel: 70,000-100,000 words
                 </p>
               </div>
 
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleSetupNext}>
+              <div className="flex justify-end pt-6">
+                <Button onClick={handleSetupNext} className="gradient-button text-white">
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {currentStep === 'whitepaper' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Story Concept / Whitepaper</CardTitle>
-              <CardDescription>Paste your full concept. This will be your canonical whitepaper.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="glass-card p-8 fade-in-up">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Story Concept / Whitepaper</h2>
+              <p className="text-white/70">Paste your full concept. This will be your canonical whitepaper.</p>
+            </div>
+            <div className="space-y-5">
               <div>
-                <Label htmlFor="whitepaper">Story Concept / Whitepaper</Label>
+                <Label htmlFor="whitepaper" className="text-white/90">Story Concept / Whitepaper</Label>
                 <Textarea
                   id="whitepaper"
                   value={whitepaper}
                   onChange={(e) => setWhitepaper(e.target.value)}
                   placeholder="Describe your story world, characters, magic systems, technology, factions, timeline, themes, and any other important details..."
-                  className="min-h-[300px] font-mono text-sm"
+                  className="min-h-[300px] font-mono text-sm premium-input text-white placeholder:text-white/40"
                 />
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-white/50 mt-2">
                   Include as much detail as possible about your world, characters, rules, and story elements.
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="storyOutline">
+                <Label htmlFor="storyOutline" className="text-white/90">
                   Story / Chapter Outline{' '}
-                  <span className="text-muted-foreground font-normal">(optional but recommended)</span>
+                  <span className="text-white/50 font-normal">(optional but recommended)</span>
                 </Label>
                 <Textarea
                   id="storyOutline"
                   value={storyOutline}
                   onChange={(e) => setStoryOutline(e.target.value)}
                   placeholder="Paste your chapter outline here. Can be:&#10;- Bullet points&#10;- Chapter summaries&#10;- Act breakdowns&#10;- Messy notes&#10;&#10;Example:&#10;Act 1 - Setup&#10;Ch 1: Kate's first day, meets Marvin&#10;Ch 2: Discovers Marvin's secret identity&#10;Ch 3: Love triangle begins with Boy A&#10;&#10;Act 2 - Rising Tension&#10;Ch 4: Kate and Marvin grow closer&#10;..."
-                  className="min-h-[300px] font-mono text-sm"
+                  className="min-h-[300px] font-mono text-sm premium-input text-white placeholder:text-white/40"
                 />
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-white/50 mt-2">
                   AI will parse this into structured Acts and Chapters. Supports plain text, bullet points, or informal notes.
                 </p>
               </div>
 
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setCurrentStep('setup')}>
+              <div className="flex justify-between pt-6">
+                <Button variant="outline" className="glass-panel border-white/20 text-white hover:bg-white/10" onClick={() => setCurrentStep('setup')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
                 </Button>
-                <Button onClick={handleWhitepaperNext}>
+                <Button onClick={handleWhitepaperNext} className="gradient-button text-white">
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {currentStep === 'bible' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Story Bible Generation</CardTitle>
-              <CardDescription>
+          <div className="glass-card p-8 fade-in-up">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Story Bible Generation</h2>
+              <p className="text-white/70">
                 Generate a structured Story Bible from your concept. This will become the canonical source of truth for your novel.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </p>
+            </div>
+            <div className="space-y-5">
               {!generatedBible ? (
-                <div className="text-center py-8">
-                  <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">
+                <div className="text-center py-12">
+                  <BookOpen className="h-20 w-20 mx-auto mb-6 text-purple-300 opacity-50" />
+                  <p className="text-white/70 mb-6 text-lg">
                     Click below to generate your Story Bible from the provided concept
                   </p>
-                  <Button onClick={handleGenerateBible} disabled={loading}>
+                  <Button onClick={handleGenerateBible} disabled={loading} className="gradient-button text-white">
                     {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Generate Story Bible
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto space-y-4 text-sm">
+                <div className="space-y-5">
+                  <div className="bg-white/5 rounded-lg p-6 max-h-[500px] overflow-y-auto space-y-4 text-sm border border-white/10">
                     <div>
                       <h3 className="font-semibold mb-2">Whitepaper (verbatim)</h3>
                       <div className="whitespace-pre-wrap bg-background border rounded p-3 text-xs">
@@ -505,19 +510,19 @@ export default function NewBookPage() {
                     )}
                   </div>
 
-                  <div className="flex justify-between pt-4">
-                    <Button variant="outline" onClick={() => setGeneratedBible(null)}>
+                  <div className="flex justify-between pt-6">
+                    <Button variant="outline" className="glass-panel border-white/20 text-white hover:bg-white/10" onClick={() => setGeneratedBible(null)}>
                       Regenerate
                     </Button>
-                    <Button onClick={handleApproveBible}>
+                    <Button onClick={handleApproveBible} className="gradient-button text-white">
                       Approve & Continue
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {currentStep === 'outline' && (
