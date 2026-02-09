@@ -143,16 +143,14 @@ BUT STILL FORBIDDEN:
 ✅ NO paragraph longer than 4-5 sentences
 ✅ Each dialogue exchange gets its own paragraph
 
-📏 PAGE LENGTH REQUIREMENTS 📏
-MINIMUM: 600 words (STRICT)
-TARGET: 700-800 words
-MAXIMUM: 900 words (STRICT)
-
-WORD COUNT ENFORCEMENT:
-- Count words as you write
-- Stop at 700-900 words
-- Do NOT exceed 900 words
-- Do NOT stop before 600 words
+📏 WORD COUNT REQUIREMENT 📏
+CRITICAL: This page MUST be between 600-1200 words.
+- Target: ~1000 words
+- Minimum: 600 words (HARD FLOOR)
+- Maximum: 1200 words (HARD CEILING)
+- Count every word carefully
+- If you're under 600 words, you MUST expand with more detail, dialogue, or internal monologue
+- If you're over 1200 words, you MUST cut content or split into next page
 
 ✍️ WRITING STYLE ✍️
 - Wattpad romance pacing
@@ -172,7 +170,7 @@ FORBIDDEN:
 Each page should cover 1-2 micro-beats:
 - A micro-beat is a small story moment (dialogue exchange, action, realization)
 - Expand each micro-beat with: dialogue, internal monologue, sensory details, emotional reactions
-- Take 300-450 words per micro-beat
+- Take 500-600 words per micro-beat
 - Do NOT rush through beats
 
 STORY BIBLE CONTEXT:
@@ -181,10 +179,10 @@ Themes: ${sections.themesTone?.slice(0, 3).join(', ') || 'Not specified'}
 
 OUTPUT FORMAT (strict JSON):
 {
-  "content": "The actual page content (600-900 words, properly formatted with \\n\\n between paragraphs)",
+  "content": "The actual page content (600-1200 words, properly formatted with \\n\\n between paragraphs)",
   "beatCoverage": "Brief description of which micro-beats this page covers",
   "narrativeMomentum": "How this page ends and what tension it creates for the next page",
-  "wordCount": 750
+  "wordCount": 1000
 }`;
 
   const userPrompt = `Write Page ${pageNumber} of ${totalPages} for Chapter ${chapter.chapterNumber}.

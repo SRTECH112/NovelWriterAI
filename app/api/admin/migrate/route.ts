@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(chapter_id, page_number),
-        CONSTRAINT valid_word_count CHECK (word_count BETWEEN 600 AND 900)
+        CONSTRAINT valid_word_count CHECK (word_count BETWEEN 600 AND 1200)
       )
     `;
 
