@@ -1,7 +1,7 @@
 'use client';
 
 import { Volume, Chapter, Page } from '@/lib/types';
-import { ChevronDown, ChevronRight, FileText, Plus, Zap } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Plus, Zap, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface VolumeChapterPageListProps {
@@ -14,6 +14,7 @@ interface VolumeChapterPageListProps {
   onPageSelect: (page: Page) => void;
   onAddChapter: (volumeId: string) => void;
   onGeneratePage: (chapterId: string, pageNumber: number) => void;
+  onRemovePage: (pageId: string, chapterId: string) => void;
 }
 
 export default function VolumeChapterPageList({
@@ -26,6 +27,7 @@ export default function VolumeChapterPageList({
   onPageSelect,
   onAddChapter,
   onGeneratePage,
+  onRemovePage,
 }: VolumeChapterPageListProps) {
   const [expandedVolumes, setExpandedVolumes] = useState<Set<string>>(new Set(volumes.map(v => v.id)));
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
@@ -137,22 +139,38 @@ export default function VolumeChapterPageList({
                           {chapterPages.map(page => {
                             const isPageSelected = currentPageId === page.id;
                             return (
-                              <button
+                              <div
                                 key={page.id}
-                                onClick={() => onPageSelect(page)}
-                                className={`w-full text-left text-xs p-2 rounded flex items-center gap-2 ${
+                                className={`w-full text-xs p-2 rounded flex items-center gap-2 ${
                                   isPageSelected
                                     ? 'bg-primary text-primary-foreground'
                                     : 'hover:bg-muted'
                                 }`}
                               >
-                                <FileText className="h-3 w-3" />
-                                <span>Page {page.pageNumber}</span>
-                                <span className="ml-auto">{page.wordCount} words</span>
-                                {page.locked && (
-                                  <span className="text-xs opacity-70">🔒</span>
-                                )}
-                              </button>
+                                <button
+                                  onClick={() => onPageSelect(page)}
+                                  className="flex-1 flex items-center gap-2 text-left"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  <span>Page {page.pageNumber}</span>
+                                  <span className="ml-auto">{page.wordCount} words</span>
+                                  {page.locked && (
+                                    <span className="text-xs opacity-70">🔒</span>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Delete Page ${page.pageNumber}? This cannot be undone.`)) {
+                                      onRemovePage(page.id, chapter.id);
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-red-500/20 rounded text-red-500"
+                                  title="Delete page"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
                             );
                           })}
 

@@ -255,6 +255,63 @@ export default function EditorV2Page() {
     }
   };
 
+  const handleRemovePage = async (pageId: string, chapterId: string) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/pages/${pageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete page');
+      }
+
+      const result = await res.json();
+
+      // Remove page from state
+      setPages(prev => ({
+        ...prev,
+        [chapterId]: (prev[chapterId] || []).filter(p => p.id !== pageId)
+      }));
+
+      // Update chapter progress
+      const updatedChapter = {
+        ...currentChapter,
+        currentPageCount: result.chapterProgress.currentPageCount,
+        wordCount: result.chapterProgress.totalWordCount,
+      };
+
+      setCurrentChapter(updatedChapter as Chapter);
+
+      // Update chapters state
+      if (currentChapter?.volumeId) {
+        setChapters(prev => ({
+          ...prev,
+          [currentChapter.volumeId]: (prev[currentChapter.volumeId] || []).map(c =>
+            c.id === chapterId
+              ? { ...c, currentPageCount: result.chapterProgress.currentPageCount, wordCount: result.chapterProgress.totalWordCount }
+              : c
+          )
+        }));
+      }
+
+      // Clear current page if it was deleted
+      if (currentPage?.id === pageId) {
+        setCurrentPage(null);
+      }
+
+      alert('Page deleted successfully!');
+    } catch (err: any) {
+      setError(err.message);
+      alert('Failed to delete page: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (status === 'loading') {
     return (
@@ -324,6 +381,7 @@ export default function EditorV2Page() {
             onPageSelect={setCurrentPage}
             onAddChapter={handleAddChapter}
             onGeneratePage={handleGeneratePage}
+            onRemovePage={handleRemovePage}
           />
         </div>
 
@@ -384,6 +442,29 @@ export default function EditorV2Page() {
                 <div className="mt-8 p-4 bg-muted rounded-lg">
                   <h3 className="font-semibold mb-2">Narrative Momentum</h3>
                   <p className="text-sm">{currentPage.narrativeMomentum}</p>
+                </div>
+              )}
+
+              {/* Generate Next Page Button */}
+              {currentChapter && currentPage.pageNumber < currentChapter.targetPageCount && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={() => handleGeneratePage(currentChapter.id, currentPage.pageNumber + 1)}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-5 w-5" />
+                        Generate Page {currentPage.pageNumber + 1}
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
