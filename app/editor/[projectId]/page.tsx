@@ -544,10 +544,10 @@ export default function EditorPage() {
                     <div><span className="text-muted-foreground">Summary:</span> {safeSelectedChapter.summary}</div>
                     <div><span className="text-muted-foreground">Word Count:</span> {safeSelectedChapter.content.split(/\s+/).length} words</div>
                   </div>
-                  {Object.keys(safeSelectedChapter.stateDelta.characterStates).length > 0 && (
+                  {Object.keys(safeSelectedChapter.characterStates || {}).length > 0 && (
                     <div className="space-y-1">
                       <h4 className="font-semibold text-xs">Character States</h4>
-                      {Object.entries(safeSelectedChapter.stateDelta.characterStates).map(([char, state]) => (
+                      {Object.entries(safeSelectedChapter.characterStates || {}).map(([char, state]) => (
                         <div key={char} className="bg-muted/50 rounded p-2 text-xs">
                           <div className="font-medium">{char}</div>
                           <div className="text-muted-foreground">{state}</div>
