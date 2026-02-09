@@ -13,6 +13,7 @@ export default function PremiumEditorPage() {
   const { data: session, status } = useSession();
   const bookId = params.bookId as string;
 
+  const [bookTitle, setBookTitle] = useState<string>('Untitled Novel');
   const [storyBible, setStoryBible] = useState<StoryBible | null>(null);
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [currentVolumeId, setCurrentVolumeId] = useState<string | null>(null);
@@ -41,10 +42,16 @@ export default function PremiumEditorPage() {
 
   const loadBookData = async () => {
     try {
-      const [bibleRes, volumesRes] = await Promise.all([
+      const [bookRes, bibleRes, volumesRes] = await Promise.all([
+        fetch(`/api/books/${bookId}`),
         fetch(`/api/books/${bookId}/story-bible`),
         fetch(`/api/books/${bookId}/volumes`)
       ]);
+
+      if (bookRes.ok) {
+        const bookData = await bookRes.json();
+        setBookTitle(bookData.book?.title || 'Untitled Novel');
+      }
 
       if (bibleRes.ok) {
         const bibleData = await bibleRes.json();
@@ -131,6 +138,58 @@ export default function PremiumEditorPage() {
     setCurrentPage(page);
   };
 
+  const handleRemovePage = async (pageId: string, chapterId: string) => {
+    try {
+      const response = await fetch(`/api/pages/${pageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete page');
+      }
+
+      // Remove page from state
+      setPages(prev => ({
+        ...prev,
+        [chapterId]: (prev[chapterId] || []).filter(p => p.id !== pageId)
+      }));
+
+      // Update chapter stats
+      const remainingPages = (pages[chapterId] || []).filter(p => p.id !== pageId);
+      const newWordCount = remainingPages.reduce((sum, p) => sum + p.wordCount, 0);
+      const newPageCount = remainingPages.length;
+
+      setChapters(prev => ({
+        ...prev,
+        [currentChapter?.volumeId || '']: (prev[currentChapter?.volumeId || ''] || []).map(c =>
+          c.id === chapterId
+            ? { ...c, currentPageCount: newPageCount, wordCount: newWordCount }
+            : c
+        )
+      }));
+
+      if (currentChapter?.id === chapterId) {
+        setCurrentChapter(prev => prev ? {
+          ...prev,
+          currentPageCount: newPageCount,
+          wordCount: newWordCount
+        } : null);
+      }
+
+      // If deleted page was current, select another page
+      if (currentPage?.id === pageId) {
+        if (remainingPages.length > 0) {
+          setCurrentPage(remainingPages[remainingPages.length - 1]);
+        } else {
+          setCurrentPage(null);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error removing page:', err);
+      alert('Failed to remove page: ' + err.message);
+    }
+  };
+
   const handleGeneratePage = async (chapterId: string, pageNumber: number) => {
     setLoading(true);
 
@@ -201,11 +260,12 @@ export default function PremiumEditorPage() {
       pages={pages}
       currentChapter={currentChapter}
       currentPage={currentPage}
-      bookTitle={storyBible?.title || 'Untitled Novel'}
+      bookTitle={bookTitle}
       loading={loading}
       onChapterSelect={handleChapterSelect}
       onPageSelect={handlePageSelect}
       onGeneratePage={handleGeneratePage}
+      onRemovePage={handleRemovePage}
       volumeOutline={currentVolume?.outline}
       chapterOutline={currentChapter?.outline}
     />
