@@ -1,7 +1,7 @@
 'use client';
 
 import { Volume, Chapter, Page } from '@/lib/types';
-import { ChevronDown, ChevronRight, FileText, Plus, Zap, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Plus, Zap, Trash2, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 
 interface VolumeChapterPageListProps {
@@ -15,6 +15,7 @@ interface VolumeChapterPageListProps {
   onAddChapter: (volumeId: string) => void;
   onGeneratePage: (chapterId: string, pageNumber: number) => void;
   onRemovePage: (pageId: string, chapterId: string) => void;
+  onRemoveChapter: (chapterId: string, chapterNumber: number, chapterTitle: string, pageCount: number) => void;
 }
 
 export default function VolumeChapterPageList({
@@ -28,6 +29,7 @@ export default function VolumeChapterPageList({
   onAddChapter,
   onGeneratePage,
   onRemovePage,
+  onRemoveChapter,
 }: VolumeChapterPageListProps) {
   const [expandedVolumes, setExpandedVolumes] = useState<Set<string>>(new Set(volumes.map(v => v.id)));
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
@@ -94,7 +96,7 @@ export default function VolumeChapterPageList({
                   return (
                     <div key={chapter.id} className={`border rounded ${isSelected ? 'border-primary bg-primary/5' : ''}`}>
                       {/* Chapter Header */}
-                      <div className="flex items-center gap-2 p-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <button
                           onClick={() => toggleChapter(chapter.id)}
                           className="p-0.5 hover:bg-muted rounded"
@@ -130,6 +132,21 @@ export default function VolumeChapterPageList({
                               style={{ width: `${progress}%` }}
                             />
                           </div>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveChapter(
+                              chapter.id,
+                              chapter.chapterNumber,
+                              chapter.title || 'Untitled',
+                              chapterPages.length
+                            );
+                          }}
+                          className="p-1 hover:bg-red-500/20 rounded text-red-500"
+                          title="Delete chapter"
+                        >
+                          <MoreVertical className="h-4 w-4" />
                         </button>
                       </div>
 

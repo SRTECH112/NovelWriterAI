@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Loader2, AlertTriangle, BookOpen, Zap } from 'lucide-r
 import VolumeSelector from '@/components/VolumeSelector';
 import VolumeChapterPageList from '@/components/VolumeChapterPageList';
 import CreateVolumeModal from '@/components/CreateVolumeModal';
+import DeleteChapterModal from '@/components/DeleteChapterModal';
 import { Volume, Chapter, Page, StoryBible, VolumeMemory } from '@/lib/types';
 
 export default function EditorV2Page() {
@@ -28,6 +29,12 @@ export default function EditorV2Page() {
   const [error, setError] = useState('');
   const [showCreateVolume, setShowCreateVolume] = useState(false);
   const [volumeOutlineBuffer, setVolumeOutlineBuffer] = useState<Record<string, string>>({});
+  const [deleteChapterModal, setDeleteChapterModal] = useState<{
+    chapterId: string;
+    chapterNumber: number;
+    chapterTitle: string;
+    pageCount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -333,6 +340,65 @@ export default function EditorV2Page() {
     }
   };
 
+  const handleRemoveChapter = (chapterId: string, chapterNumber: number, chapterTitle: string, pageCount: number) => {
+    setDeleteChapterModal({ chapterId, chapterNumber, chapterTitle, pageCount });
+  };
+
+  const confirmDeleteChapter = async () => {
+    if (!deleteChapterModal) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/chapters/${deleteChapterModal.chapterId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete chapter');
+      }
+
+      const result = await res.json();
+
+      // Remove chapter and its pages from state
+      if (currentVolumeId) {
+        setChapters(prev => ({
+          ...prev,
+          [currentVolumeId]: (prev[currentVolumeId] || []).filter(c => c.id !== deleteChapterModal.chapterId)
+        }));
+      }
+
+      setPages(prev => {
+        const newPages = { ...prev };
+        delete newPages[deleteChapterModal.chapterId];
+        return newPages;
+      });
+
+      // Navigation safety: if current chapter was deleted, navigate to first available chapter
+      if (currentChapter?.id === deleteChapterModal.chapterId) {
+        const remainingChapters = currentVolumeId ? chapters[currentVolumeId]?.filter(c => c.id !== deleteChapterModal.chapterId) : [];
+        if (remainingChapters && remainingChapters.length > 0) {
+          setCurrentChapter(remainingChapters[0]);
+          const firstChapterPages = pages[remainingChapters[0].id] || [];
+          setCurrentPage(firstChapterPages.length > 0 ? firstChapterPages[0] : null);
+        } else {
+          setCurrentChapter(null);
+          setCurrentPage(null);
+        }
+      }
+
+      setDeleteChapterModal(null);
+      alert(`Chapter ${deleteChapterModal.chapterNumber} deleted successfully! ${result.remainingChapterCount} chapters remaining.`);
+    } catch (err: any) {
+      setError(err.message);
+      alert('Failed to delete chapter: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (status === 'loading') {
     return (
@@ -403,6 +469,7 @@ export default function EditorV2Page() {
             onAddChapter={handleAddChapter}
             onGeneratePage={handleGeneratePage}
             onRemovePage={handleRemovePage}
+            onRemoveChapter={handleRemoveChapter}
           />
         </div>
 
@@ -582,6 +649,16 @@ export default function EditorV2Page() {
         onSubmit={handleCreateVolume}
         nextVolumeNumber={volumes.length + 1}
       />
+
+      {deleteChapterModal && (
+        <DeleteChapterModal
+          chapterNumber={deleteChapterModal.chapterNumber}
+          chapterTitle={deleteChapterModal.chapterTitle}
+          pageCount={deleteChapterModal.pageCount}
+          onConfirm={confirmDeleteChapter}
+          onCancel={() => setDeleteChapterModal(null)}
+        />
+      )}
     </div>
   );
 }
