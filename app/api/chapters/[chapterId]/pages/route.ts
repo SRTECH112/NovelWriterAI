@@ -25,7 +25,7 @@ export async function GET(
       );
     }
 
-    if (chapterCheck[0].user_id !== user.id) {
+    if (String(chapterCheck[0].user_id) !== String(user.id)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
