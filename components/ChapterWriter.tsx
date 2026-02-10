@@ -151,7 +151,7 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">Chapter {chapter.chapterNumber}</span>
-                      {chapter.canonWarnings.length > 0 && (
+                      {(chapter.canonWarnings?.length ?? 0) > 0 && (
                         <Badge variant="destructive" className="gap-1">
                           <AlertTriangle className="h-3 w-3" />
                           Canon Warning
