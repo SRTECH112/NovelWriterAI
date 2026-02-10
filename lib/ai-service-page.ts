@@ -8,6 +8,53 @@ const openai = new OpenAI({
 });
 
 /**
+ * Intelligently truncate volume outline to keep it within token limits
+ * while preserving the most relevant context for the current chapter
+ */
+function truncateVolumeOutlineForContext(
+  volumeOutline: string,
+  currentChapterNumber: number,
+  totalChapters: number
+): string {
+  const maxLength = 3000; // Max characters for volume outline
+  
+  if (volumeOutline.length <= maxLength) {
+    return volumeOutline;
+  }
+
+  // Split outline into sections (by chapter if possible)
+  const lines = volumeOutline.split('\n');
+  
+  // Calculate which portion of the outline is most relevant
+  const progressRatio = currentChapterNumber / totalChapters;
+  
+  // Keep beginning (setup), relevant middle section, and end (destination)
+  const keepStart = Math.floor(lines.length * 0.2); // First 20%
+  const keepEnd = Math.floor(lines.length * 0.1); // Last 10%
+  
+  // Calculate middle section around current position
+  const middleStart = Math.max(keepStart, Math.floor(lines.length * progressRatio) - 10);
+  const middleEnd = Math.min(lines.length - keepEnd, Math.floor(lines.length * progressRatio) + 10);
+  
+  const relevantLines = [
+    ...lines.slice(0, keepStart),
+    '\n[... earlier chapters omitted for brevity ...]\n',
+    ...lines.slice(middleStart, middleEnd),
+    '\n[... later chapters omitted for brevity ...]\n',
+    ...lines.slice(-keepEnd)
+  ];
+  
+  let truncated = relevantLines.join('\n');
+  
+  // If still too long, do a hard truncate
+  if (truncated.length > maxLength) {
+    truncated = truncated.substring(0, maxLength) + '\n\n[... outline truncated due to length ...]';
+  }
+  
+  return truncated;
+}
+
+/**
  * Generate a single page (600-900 words, 1-2 micro-beats only)
  * CRITICAL: Pages are the ONLY writable unit. Never generate full chapters.
  * Structure: Volume → Chapter → Page (no Acts)
@@ -69,9 +116,10 @@ ${chapter.actTag ? `- Act Tag: ${chapter.actTag} (metadata only)` : ''}
 
 ${volumeOutline ? `
 🚨 VOLUME OUTLINE (BINDING) 🚨
-${volumeOutline}
+${truncateVolumeOutlineForContext(volumeOutline, chapter.chapterNumber, structureContext?.totalChaptersInVolume || 10)}
 
 YOU MUST FOLLOW THE VOLUME OUTLINE STRICTLY.
+The outline above has been focused on the relevant sections for this chapter.
 ` : ''}
 
 ${chapterOutline ? `
