@@ -118,6 +118,20 @@ export interface Chapter {
   regenerationCount?: number;
   createdAt: string;
   updatedAt: string;
+  // Optional nested stateDelta for backward compatibility with legacy components
+  stateDelta?: {
+    characterStates: Record<string, any>;
+    worldChanges: any[];
+    plotProgression: any[];
+    emotionalState?: string;
+    unresolvedThreads?: string[];
+  };
+  // Optional nested proseQuality for backward compatibility with legacy components
+  proseQuality?: {
+    score: number;
+    issues: string[];
+    warnings: string[];
+  };
 }
 
 export interface Page {

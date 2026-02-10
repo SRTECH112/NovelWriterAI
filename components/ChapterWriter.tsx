@@ -19,10 +19,10 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
   const [error, setError] = useState('');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
 
-  const safeStateDelta = {
-    characterStates: selectedChapter?.characterStates || {},
-    worldChanges: selectedChapter?.worldChanges || [],
-    plotProgression: selectedChapter?.plotProgression || [],
+  const safeStateDelta = selectedChapter?.stateDelta || {
+    characterStates: {},
+    worldChanges: [],
+    plotProgression: [],
   };
 
   const nextChapterNumber = chapters.length > 0 ? Math.max(...chapters.map(c => c.chapterNumber)) + 1 : 1;
