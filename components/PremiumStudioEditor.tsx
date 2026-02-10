@@ -54,10 +54,7 @@ export default function PremiumStudioEditor({
   const currentVolume = volumes.find(v => v.id === currentChapter?.volumeId);
 
   return (
-    <div className="relative">
-      {/* ✨ Premium Gradient Background */}
-      <div className="studio-background fixed inset-0 -z-10" />
-
+    <div className="min-h-screen h-screen overflow-y-auto studio-background">
       {/* 🟣 TOP BAR - Floating Glass Command Center */}
       <div className="fixed top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-50">
         <div className="glass-panel rounded-xl md:rounded-2xl px-3 md:px-6 py-3 md:py-4 flex items-center justify-between smooth-transition">
@@ -122,7 +119,7 @@ export default function PremiumStudioEditor({
       </div>
 
       {/* Main Layout */}
-      <div className="min-h-screen pt-16 md:pt-24 px-2 md:px-4 pb-8 flex flex-col md:flex-row gap-4 md:gap-6 max-w-[1800px] mx-auto">
+      <div className="pt-20 md:pt-24 px-2 md:px-4 pb-8 flex flex-col md:flex-row gap-4 md:gap-6 max-w-[1800px] mx-auto">
         {/* 🟣 LEFT SIDEBAR - Story Tree */}
         <div className="w-full md:w-80 flex-shrink-0">
           <div className="glass-panel-strong rounded-xl md:rounded-2xl p-3 md:p-4 smooth-transition max-h-64 md:max-h-[calc(100vh-120px)] overflow-y-auto bg-white/95 md:bg-transparent">
