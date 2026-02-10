@@ -64,6 +64,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Mobile scrolling fix */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
 }
 
 /* ✨ PREMIUM STUDIO BACKGROUND */

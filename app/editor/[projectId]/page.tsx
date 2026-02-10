@@ -278,9 +278,9 @@ export default function EditorPage() {
       )}
 
       {/* 3-Panel Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         {/* LEFT PANEL - Chapter List */}
-        <div className="w-64 border-r bg-card flex flex-col">
+        <div className="w-full md:w-64 border-r bg-card flex flex-col max-h-96 md:max-h-none">
           <div className="p-4 border-b">
             <h2 className="font-semibold mb-2">Chapters</h2>
             <Button 
@@ -328,7 +328,7 @@ export default function EditorPage() {
         </div>
 
         {/* CENTER PANEL - Chapter Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto md:overflow-hidden">
           {safeSelectedChapter ? (
             <>
               <div className="p-4 border-b bg-card flex items-center justify-between">
@@ -413,7 +413,7 @@ export default function EditorPage() {
         </div>
 
         {/* RIGHT PANEL - Story Bible & Info */}
-        <div className="w-96 border-l bg-card flex flex-col overflow-hidden">
+        <div className="w-full md:w-96 border-l bg-card flex flex-col overflow-y-auto md:overflow-hidden">
           <div className="p-4 border-b space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">Canon Control</h2>
