@@ -59,17 +59,17 @@ export default function PremiumStudioEditor({
       <div className="studio-background" />
 
       {/* 🟣 TOP BAR - Floating Glass Command Center */}
-      <div className="fixed top-4 left-4 right-4 z-50">
-        <div className="glass-panel rounded-2xl px-6 py-4 flex items-center justify-between smooth-transition">
+      <div className="fixed top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-50">
+        <div className="glass-panel rounded-xl md:rounded-2xl px-3 md:px-6 py-3 md:py-4 flex items-center justify-between smooth-transition">
           {/* Left: Book Title & Breadcrumb */}
-          <div className="flex items-center gap-4">
-            <BookOpen className="h-5 w-5 text-white/70" />
-            <div>
-              <h1 className="text-white font-serif text-lg font-semibold tracking-wide">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+            <BookOpen className="h-4 w-4 md:h-5 md:w-5 text-white/70 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-white font-serif text-sm md:text-lg font-semibold tracking-wide truncate">
                 {bookTitle}
               </h1>
               {currentVolume && currentChapter && (
-                <div className="flex items-center gap-2 text-xs text-white/60 mt-0.5">
+                <div className="hidden md:flex items-center gap-2 text-xs text-white/60 mt-0.5">
                   <span>{currentVolume.title}</span>
                   <span>→</span>
                   <span>Chapter {currentChapter.chapterNumber}</span>
@@ -85,11 +85,11 @@ export default function PremiumStudioEditor({
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-3">
-            {/* Context Panel Toggle */}
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+            {/* Context Panel Toggle - Hidden on mobile */}
             <button
               onClick={() => setShowContextPanel(!showContextPanel)}
-              className="px-4 py-2 rounded-xl text-white/80 hover:text-white border border-white/20 hover:border-white/30 smooth-transition"
+              className="hidden md:flex px-4 py-2 rounded-xl text-white/80 hover:text-white border border-white/20 hover:border-white/30 smooth-transition"
             >
               <Layers className="h-4 w-4" />
             </button>
@@ -99,21 +99,22 @@ export default function PremiumStudioEditor({
               <button
                 onClick={() => onGeneratePage(currentChapter.id, currentChapter.currentPageCount + 1)}
                 disabled={loading}
-                className="gradient-button px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gradient-button px-3 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-white text-xs md:text-base font-medium flex items-center gap-1 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="h-4 w-4" />
-                {loading ? 'Generating...' : `Generate Page ${currentChapter.currentPageCount + 1}`}
+                <Sparkles className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">{loading ? 'Generating...' : `Generate Page ${currentChapter.currentPageCount + 1}`}</span>
+                <span className="sm:hidden">Page {currentChapter.currentPageCount + 1}</span>
               </button>
             )}
 
-            {/* Save Status */}
-            <div className="flex items-center gap-2 text-white/60 text-sm">
+            {/* Save Status - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-2 text-white/60 text-sm">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <span>Saved</span>
             </div>
 
-            {/* User Avatar */}
-            <div className="w-9 h-9 rounded-full glass-panel flex items-center justify-center">
+            {/* User Avatar - Hidden on mobile */}
+            <div className="hidden md:flex w-9 h-9 rounded-full glass-panel items-center justify-center">
               <User className="h-4 w-4 text-white/70" />
             </div>
           </div>
@@ -121,10 +122,10 @@ export default function PremiumStudioEditor({
       </div>
 
       {/* Main Layout */}
-      <div className="pt-24 px-4 pb-8 flex gap-6 max-w-[1800px] mx-auto">
+      <div className="pt-16 md:pt-24 px-2 md:px-4 pb-8 flex flex-col md:flex-row gap-4 md:gap-6 max-w-[1800px] mx-auto">
         {/* 🟣 LEFT SIDEBAR - Story Tree */}
-        <div className="w-80 flex-shrink-0">
-          <div className="glass-panel rounded-2xl p-4 smooth-transition max-h-[calc(100vh-120px)] overflow-y-auto">
+        <div className="w-full md:w-80 flex-shrink-0">
+          <div className="glass-panel rounded-xl md:rounded-2xl p-3 md:p-4 smooth-transition max-h-64 md:max-h-[calc(100vh-120px)] overflow-y-auto">
             <div className="space-y-2">
               {volumes.map(volume => {
                 const isExpanded = expandedVolumes.has(volume.id);
@@ -135,16 +136,16 @@ export default function PremiumStudioEditor({
                     {/* Volume Header */}
                     <button
                       onClick={() => toggleVolume(volume.id)}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10 smooth-transition"
+                      className="w-full flex items-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-white/90 hover:bg-white/10 smooth-transition"
                     >
                       {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-white/60" />
+                        <ChevronDown className="h-3 w-3 md:h-4 md:w-4 text-white/60" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-white/60" />
+                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4 text-white/60" />
                       )}
-                      <BookOpen className="h-4 w-4 text-violet-400" />
-                      <span className="font-medium text-sm">{volume.title}</span>
-                      <span className="ml-auto text-xs text-white/40">{volumeChapters.length} ch</span>
+                      <BookOpen className="h-3 w-3 md:h-4 md:w-4 text-violet-400" />
+                      <span className="font-medium text-xs md:text-sm truncate">{volume.title}</span>
+                      <span className="ml-auto text-xs text-white/40 flex-shrink-0">{volumeChapters.length} ch</span>
                     </button>
 
                     {/* Chapters */}
@@ -159,11 +160,11 @@ export default function PremiumStudioEditor({
                               {/* Chapter */}
                               <button
                                 onClick={() => onChapterSelect(chapter)}
-                                className={`w-full text-left px-3 py-2 rounded-lg smooth-transition ${
+                                className={`w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded-lg smooth-transition ${
                                   isActive ? 'bg-white/15 border-l-2 border-violet-400' : 'hover:bg-white/5'
                                 }`}
                               >
-                                <div className="text-sm text-white/90 font-medium">
+                                <div className="text-xs md:text-sm text-white/90 font-medium truncate">
                                   Ch {chapter.chapterNumber}: {chapter.title}
                                 </div>
                                 <div className="text-xs text-white/50 mt-0.5">
@@ -180,13 +181,13 @@ export default function PremiumStudioEditor({
                                       <div key={page.id} className="flex items-center gap-1">
                                         <button
                                           onClick={() => onPageSelect(page)}
-                                          className={`flex-1 text-left px-3 py-1.5 rounded-lg text-xs smooth-transition ${
+                                          className={`flex-1 text-left px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs smooth-transition ${
                                             isPageActive 
                                               ? 'active-page-glow text-white' 
                                               : 'text-white/60 hover:bg-white/5 hover:text-white/80'
                                           }`}
                                         >
-                                          Page {page.pageNumber} · {page.wordCount} words
+                                          <span className="truncate block">Page {page.pageNumber} · {page.wordCount}w</span>
                                         </button>
                                         <button
                                           onClick={(e) => {
@@ -252,22 +253,22 @@ export default function PremiumStudioEditor({
               )}
 
               {/* Premium Editor Card */}
-              <div className="editor-card p-12">
+              <div className="editor-card p-4 md:p-8 lg:p-12">
                 {/* Page Header */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-3xl font-serif font-bold text-gray-900 mb-1">
+                <div className="mb-6 md:mb-8">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-xl md:text-2xl lg:text-3xl font-serif font-bold text-gray-900 mb-1">
                         {currentChapter?.title || 'Untitled Chapter'}
                       </h2>
-                      <p className="text-gray-500">
+                      <p className="text-sm md:text-base text-gray-500">
                         Page {currentPage.pageNumber} of {currentChapter?.targetPageCount}
                       </p>
                     </div>
-                    <div className="text-right text-sm text-gray-500">
+                    <div className="text-left md:text-right text-sm text-gray-500 flex-shrink-0">
                       <div>{currentPage.wordCount} words</div>
                       {currentPage.beatCoverage && (
-                        <div className="text-xs mt-1">{currentPage.beatCoverage}</div>
+                        <div className="text-xs mt-1 line-clamp-1">{currentPage.beatCoverage}</div>
                       )}
                     </div>
                   </div>
@@ -275,8 +276,8 @@ export default function PremiumStudioEditor({
                 </div>
 
                 {/* Page Content */}
-                <div className="prose prose-lg max-w-none">
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-lg cursor-glow text-fade-in">
+                <div className="prose prose-sm md:prose-base lg:prose-lg max-w-none">
+                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap font-serif text-base md:text-lg cursor-glow text-fade-in">
                     {currentPage.content}
                   </div>
                 </div>
