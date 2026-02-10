@@ -230,14 +230,14 @@ export function ChapterWriter({ bible, outline, chapters, onChapterGenerated }: 
               </div>
             )}
 
-            {selectedChapter.canonWarnings.length > 0 && (
+            {(selectedChapter.canonWarnings?.length ?? 0) > 0 && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2 text-destructive font-semibold">
                   <AlertTriangle className="h-4 w-4" />
                   Canon Violations Detected
                 </div>
                 <ul className="space-y-1 text-sm">
-                  {selectedChapter.canonWarnings.map((warning, i) => (
+                  {selectedChapter.canonWarnings?.map((warning, i) => (
                     <li key={i}>• {warning}</li>
                   ))}
                 </ul>

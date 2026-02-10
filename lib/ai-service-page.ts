@@ -123,7 +123,7 @@ Page ending should:
 ` : 'This is the FIRST page of the chapter. Set the opening scene and establish the initial situation.'}
 
 🎭 PACING RULES (CRITICAL)
-${!structureContext.isLastChapter ? `
+${!structureContext?.isLastChapter ? `
 ✅ Slow burn pacing
 ✅ Gradual emotional buildup
 ✅ Leave major conflicts unresolved

@@ -231,12 +231,12 @@ export async function saveChapter(bookId: string, chapter: Chapter) {
     )
     VALUES (
       ${bookId}, ${chapter.chapterNumber}, ${chapter.content}, ${chapter.summary},
-      ${chapter.content.split(/\s+/).length}, ${JSON.stringify(chapter.stateDelta.characterStates)},
-      ${JSON.stringify(chapter.stateDelta.worldChanges)}, ${JSON.stringify(chapter.stateDelta.plotProgression)},
-      ${chapter.stateDelta.emotionalState}, ${JSON.stringify(chapter.stateDelta.unresolvedThreads || [])},
-      ${JSON.stringify(chapter.canonWarnings)}, ${chapter.proseQuality?.score},
+      ${chapter.content.split(/\s+/).length}, ${JSON.stringify(chapter.stateDelta?.characterStates || {})},
+      ${JSON.stringify(chapter.stateDelta?.worldChanges || [])}, ${JSON.stringify(chapter.stateDelta?.plotProgression || [])},
+      ${chapter.stateDelta?.emotionalState || null}, ${JSON.stringify(chapter.stateDelta?.unresolvedThreads || [])},
+      ${JSON.stringify(chapter.canonWarnings || [])}, ${chapter.proseQuality?.score || null},
       ${JSON.stringify(chapter.proseQuality?.issues || [])}, ${JSON.stringify(chapter.proseQuality?.warnings || [])},
-      ${chapter.regenerationCount}
+      ${chapter.regenerationCount || 0}
     )
     ON CONFLICT (book_id, chapter_number)
     DO UPDATE SET
@@ -271,17 +271,34 @@ export async function getChapters(bookId: string): Promise<Chapter[]> {
     id: row.id.toString(),
     bookId: row.book_id.toString(),
     volumeId: row.volume_id?.toString() || '',
-    actId: row.act_id?.toString() || '',
     chapterNumber: row.chapter_number,
+    chapterOrder: row.chapter_order || row.chapter_number,
     globalChapterNumber: row.global_chapter_number || row.chapter_number,
     title: row.title,
     content: row.content,
     summary: row.summary,
     wordCount: row.word_count,
+    targetWordCount: row.target_word_count || 2500,
+    targetPageCount: row.target_page_count || 3,
+    currentPageCount: row.current_page_count || 0,
+    outline: row.outline,
+    actTag: row.act_tag,
     emotionalBeat: row.emotional_beat,
     relationshipShift: row.relationship_shift,
     sceneGoal: row.scene_goal,
+    characterStates: row.character_states || {},
+    worldChanges: row.world_changes || [],
+    plotProgression: row.plot_progression || [],
+    emotionalState: row.emotional_state,
+    unresolvedThreads: row.unresolved_threads || [],
+    canonWarnings: row.canon_warnings || [],
+    proseQualityScore: row.prose_quality_score,
+    proseQualityIssues: row.prose_quality_issues || [],
+    proseQualityWarnings: row.prose_quality_warnings || [],
+    regenerationCount: row.regeneration_count || 0,
     hookToNext: row.hook_to_next,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
     stateDelta: {
       characterStates: row.character_states || {},
       worldChanges: row.world_changes || [],
@@ -289,15 +306,10 @@ export async function getChapters(bookId: string): Promise<Chapter[]> {
       emotionalState: row.emotional_state,
       unresolvedThreads: row.unresolved_threads || [],
     },
-    canonWarnings: row.canon_warnings || [],
     proseQuality: row.prose_quality_score ? {
       score: row.prose_quality_score,
       issues: row.prose_quality_issues || [],
       warnings: row.prose_quality_warnings || [],
     } : undefined,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
-    lastGeneratedAt: row.last_generated_at.toISOString(),
-    regenerationCount: row.regeneration_count,
   }));
 }

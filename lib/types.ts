@@ -116,6 +116,7 @@ export interface Chapter {
   proseQualityIssues?: string[];
   proseQualityWarnings?: string[];
   regenerationCount?: number;
+  hookToNext?: string; // Hook/teaser to the next chapter
   createdAt: string;
   updatedAt: string;
   // Optional nested stateDelta for backward compatibility with legacy components

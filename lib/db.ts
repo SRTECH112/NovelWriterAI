@@ -5,6 +5,4 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Configure with connection pooling
-export const sql = neon(process.env.DATABASE_URL, {
-  fetchConnectionCache: true,
-});
+export const sql = neon(process.env.DATABASE_URL);
