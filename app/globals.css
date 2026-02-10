@@ -75,8 +75,6 @@
 
 /* ✨ PREMIUM STUDIO BACKGROUND */
 .studio-background {
-  position: relative;
-  min-height: 100vh;
   background: 
     radial-gradient(ellipse at top right, rgba(167, 139, 250, 0.15), transparent 50%),
     radial-gradient(ellipse at bottom left, rgba(255, 107, 157, 0.12), transparent 50%),

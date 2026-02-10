@@ -4,13 +4,20 @@ import { sql } from '@/lib/db';
 import { generatePage } from '@/lib/ai-service-page';
 import { StoryBible, Volume, Act, Chapter, Page } from '@/lib/types';
 
+export const maxDuration = 60; // Set max duration to 60 seconds for Vercel
+
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔵 Starting page generation request');
     const user = await requireAuth();
+    console.log('✅ User authenticated:', user.id);
+    
     const body = await request.json();
     const { chapterId, pageNumber } = body;
+    console.log('📝 Request params:', { chapterId, pageNumber });
 
     if (!chapterId || !pageNumber) {
+      console.error('❌ Missing required parameters');
       return NextResponse.json(
         { error: 'Missing chapterId or pageNumber' },
         { status: 400 }
