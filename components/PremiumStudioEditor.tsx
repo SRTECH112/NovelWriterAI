@@ -125,7 +125,7 @@ export default function PremiumStudioEditor({
       <div className="pt-16 md:pt-24 px-2 md:px-4 pb-8 flex flex-col md:flex-row gap-4 md:gap-6 max-w-[1800px] mx-auto">
         {/* 🟣 LEFT SIDEBAR - Story Tree */}
         <div className="w-full md:w-80 flex-shrink-0">
-          <div className="glass-panel rounded-xl md:rounded-2xl p-3 md:p-4 smooth-transition max-h-64 md:max-h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="glass-panel-strong rounded-xl md:rounded-2xl p-3 md:p-4 smooth-transition max-h-64 md:max-h-[calc(100vh-120px)] overflow-y-auto bg-white/95 md:bg-transparent">
             <div className="space-y-2">
               {volumes.map(volume => {
                 const isExpanded = expandedVolumes.has(volume.id);
@@ -136,16 +136,16 @@ export default function PremiumStudioEditor({
                     {/* Volume Header */}
                     <button
                       onClick={() => toggleVolume(volume.id)}
-                      className="w-full flex items-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-white/90 hover:bg-white/10 smooth-transition"
+                      className="w-full flex items-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-gray-900 md:text-white/90 hover:bg-gray-100 md:hover:bg-white/10 smooth-transition"
                     >
                       {isExpanded ? (
-                        <ChevronDown className="h-3 w-3 md:h-4 md:w-4 text-white/60" />
+                        <ChevronDown className="h-3 w-3 md:h-4 md:w-4 text-gray-600 md:text-white/60" />
                       ) : (
-                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4 text-white/60" />
+                        <ChevronRight className="h-3 w-3 md:h-4 md:w-4 text-gray-600 md:text-white/60" />
                       )}
-                      <BookOpen className="h-3 w-3 md:h-4 md:w-4 text-violet-400" />
+                      <BookOpen className="h-3 w-3 md:h-4 md:w-4 text-violet-500 md:text-violet-400" />
                       <span className="font-medium text-xs md:text-sm truncate">{volume.title}</span>
-                      <span className="ml-auto text-xs text-white/40 flex-shrink-0">{volumeChapters.length} ch</span>
+                      <span className="ml-auto text-xs text-gray-500 md:text-white/40 flex-shrink-0">{volumeChapters.length} ch</span>
                     </button>
 
                     {/* Chapters */}
@@ -161,13 +161,13 @@ export default function PremiumStudioEditor({
                               <button
                                 onClick={() => onChapterSelect(chapter)}
                                 className={`w-full text-left px-2 md:px-3 py-1.5 md:py-2 rounded-lg smooth-transition ${
-                                  isActive ? 'bg-white/15 border-l-2 border-violet-400' : 'hover:bg-white/5'
+                                  isActive ? 'bg-violet-100 md:bg-white/15 border-l-2 border-violet-500 md:border-violet-400' : 'hover:bg-gray-100 md:hover:bg-white/5'
                                 }`}
                               >
-                                <div className="text-xs md:text-sm text-white/90 font-medium truncate">
+                                <div className="text-xs md:text-sm text-gray-900 md:text-white/90 font-medium truncate">
                                   Ch {chapter.chapterNumber}: {chapter.title}
                                 </div>
-                                <div className="text-xs text-white/50 mt-0.5">
+                                <div className="text-xs text-gray-600 md:text-white/50 mt-0.5">
                                   {chapter.currentPageCount} / {chapter.targetPageCount} pages
                                 </div>
                               </button>
@@ -183,8 +183,8 @@ export default function PremiumStudioEditor({
                                           onClick={() => onPageSelect(page)}
                                           className={`flex-1 text-left px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs smooth-transition ${
                                             isPageActive 
-                                              ? 'active-page-glow text-white' 
-                                              : 'text-white/60 hover:bg-white/5 hover:text-white/80'
+                                              ? 'bg-violet-50 md:active-page-glow text-violet-900 md:text-white font-medium' 
+                                              : 'text-gray-700 md:text-white/60 hover:bg-gray-50 md:hover:bg-white/5 hover:text-gray-900 md:hover:text-white/80'
                                           }`}
                                         >
                                           <span className="truncate block">Page {page.pageNumber} · {page.wordCount}w</span>
