@@ -75,9 +75,8 @@
 
 /* ✨ PREMIUM STUDIO BACKGROUND */
 .studio-background {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
+  position: relative;
+  min-height: 100vh;
   background: 
     radial-gradient(ellipse at top right, rgba(167, 139, 250, 0.15), transparent 50%),
     radial-gradient(ellipse at bottom left, rgba(255, 107, 157, 0.12), transparent 50%),
@@ -247,9 +246,8 @@
 
 /* Premium gradient background for all pages */
 .premium-page-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
+  position: relative;
+  min-height: 100vh;
   background: 
     radial-gradient(ellipse at top right, rgba(139, 92, 246, 0.15), transparent 50%),
     radial-gradient(ellipse at bottom left, rgba(236, 72, 153, 0.12), transparent 50%),
