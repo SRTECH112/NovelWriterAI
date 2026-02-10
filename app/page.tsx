@@ -32,7 +32,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen premium-page-bg text-white overflow-hidden">
+    <div className="min-h-screen premium-page-bg text-white overflow-y-auto overflow-x-hidden">
       {/* Hero Section */}
       <div className="relative">
         <div className="container mx-auto px-6 pt-20 pb-32">
