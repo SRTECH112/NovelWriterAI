@@ -115,11 +115,30 @@ export async function generatePage(
 ${chapter.actTag ? `- Act Tag: ${chapter.actTag} (metadata only)` : ''}
 
 ${volumeOutline ? `
-🚨 VOLUME OUTLINE (BINDING) 🚨
+🚨 VOLUME OUTLINE (HARD BOUNDARY - NON-NEGOTIABLE) 🚨
 ${truncateVolumeOutlineForContext(volumeOutline, chapter.chapterNumber, structureContext?.totalChaptersInVolume || 10)}
 
-YOU MUST FOLLOW THE VOLUME OUTLINE STRICTLY.
-The outline above has been focused on the relevant sections for this chapter.
+⚠️ OUTLINE AUTHORITY HIERARCHY (MANDATORY) ⚠️
+1. Story Bible (themes, rules, tone) - CANONICAL
+2. Volume Outline (HARD CONSTRAINT) - YOU ARE HERE
+3. Chapter Outline (tactical guidance)
+4. Page Context (last 17 pages)
+
+🔒 HARD VOLUME CONSTRAINT RULES:
+✅ The volume outline is a HARD BOUNDARY, not a suggestion
+✅ You may ONLY write what the volume outline permits
+✅ You may NOT invent new arcs, conflicts, or resolutions outside this outline
+✅ You may NOT expand the story beyond the final outlined chapter
+✅ This is Volume ${structureContext?.currentVolumeNumber || volume.volumeNumber} of ${structureContext?.totalVolumes || '?'} - treat it as ONE PART of a larger story
+
+❌ FORBIDDEN:
+❌ Treating this volume as the complete story
+❌ Introducing new long-term arcs not in the outline
+❌ Resolving story-wide conflicts prematurely
+❌ Expanding beyond outlined scope "for completeness"
+❌ Assuming no future volumes exist
+
+IF THE OUTLINE ENDS, YOU STOP. NO EXCEPTIONS.
 ` : ''}
 
 ${chapterOutline ? `
@@ -185,13 +204,28 @@ ${!structureContext?.isLastChapter ? `
 ❌ Resolving act-level arcs
 ❌ Using "happily ever after" language
 ` : `
-✅ Deliver chapter climax
-✅ Resolve chapter-level tension
-✅ Set up next chapter hook
-✅ Maintain volume-level tension
+🚨 FINAL CHAPTER OF VOLUME ${structureContext?.currentVolumeNumber || volume.volumeNumber} 🚨
 
-❌ Resolving volume-level arcs
-❌ Major relationship breakthroughs (save for later volumes)
+✅ Resolve ONLY what the volume outline specifies for this chapter
+✅ Create emotional pause or soft cliff
+✅ Provide thematic closure for THIS VOLUME ONLY
+✅ Maintain tension for future volumes
+✅ End with forward momentum toward next volume
+
+❌ DO NOT resolve the entire story
+❌ DO NOT introduce endgame themes
+❌ DO NOT wrap up story-wide conflicts
+❌ DO NOT time-skip to endings
+❌ DO NOT provide confession payoffs unless outlined
+❌ DO NOT write marriage/final resolution unless explicitly stated in outline
+❌ DO NOT treat this as the story's conclusion
+
+🔒 VOLUME COMPLETION RULES:
+This is the FINAL CHAPTER of Volume ${structureContext?.currentVolumeNumber || volume.volumeNumber}, NOT the final chapter of the story.
+- Focus on emotional containment and transition
+- The volume should feel complete but NOT final
+- Leave room for future volumes to continue the story
+- End intentionally, not abruptly
 `}
 
 ⚠️ PARAGRAPH FORMATTING (MANDATORY) ⚠️
@@ -273,12 +307,31 @@ ${!isFirstPage && !isLastPage ? `🔗 CONTINUATION PAGE INSTRUCTIONS:
 - Advance 1-2 micro-beats while preserving narrative flow
 - The reader should NOT feel a break between pages` : ''}
 
-${isLastPage ? `🎯 FINAL PAGE INSTRUCTIONS:
+${isLastPage && structureContext?.isLastChapter ? `🎯 FINAL PAGE OF VOLUME ${structureContext?.currentVolumeNumber || volume.volumeNumber} INSTRUCTIONS:
+- Continue seamlessly from Page ${pageNumber - 1}
+- Deliver the chapter's emotional climax AS OUTLINED
+- Resolve ONLY the chapter-level tension specified in the outline
+- End with emotional pause, soft cliff, or thematic closure
+- Create forward momentum toward the NEXT VOLUME
+
+🚨 CRITICAL VOLUME BOUNDARY ENFORCEMENT:
+❌ DO NOT resolve the entire story
+❌ DO NOT resolve volume-level arcs beyond what the outline specifies
+❌ DO NOT introduce endgame themes or final resolutions
+❌ DO NOT write as if this is the story's conclusion
+❌ DO NOT time-skip to endings or "happily ever after"
+❌ DO NOT provide major confessions/breakthroughs unless explicitly outlined
+
+✅ This volume should feel complete but NOT final
+✅ Leave major story threads open for future volumes
+✅ Focus on emotional containment and transition
+✅ End intentionally, not abruptly` : isLastPage ? `🎯 FINAL PAGE INSTRUCTIONS:
 - Continue seamlessly from Page ${pageNumber - 1}
 - Deliver the chapter's emotional climax
 - Resolve the chapter-level tension
 - Create a hook for the next chapter
-- DO NOT resolve volume-level arcs` : ''}
+- DO NOT resolve volume-level arcs
+- Maintain forward momentum` : ''}
 
 Chapter: ${chapter.title || `Chapter ${chapter.chapterNumber}`}
 ${chapter.emotionalBeat ? `Emotional Beat: ${chapter.emotionalBeat}` : ''}
